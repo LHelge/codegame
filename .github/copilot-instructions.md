@@ -13,7 +13,7 @@ This repository (codegame) teaches kids programming by letting them write game A
 ## Language and Style
 - Backend: Rust with Axum.
 - Database: Postgres.
-- Frontend: React with Tailwind CSS.
+- Frontend: React with Tailwind CSS (TypeScript).
 - Games: Rust with Bevy, compiled to WASM.
 - Primary scripting language: Lua (AI logic).
 - Keep Lua scripts minimal and self-contained.
