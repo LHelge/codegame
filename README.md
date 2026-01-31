@@ -18,6 +18,7 @@ A teaching-friendly platform where kids can program game AI logic in Lua and pit
 ## Getting Started (Planned)
 Once the project scaffold is in place, this section will include:
 - Install prerequisites (Rust toolchain, Node.js)
+- Add WASM target: `rustup target add wasm32-unknown-unknown`
 - Run backend API (Axum) with Postgres via Docker Compose
 - Run frontend (React + Tailwind)
 - Build/run Bevy game (WASM)

@@ -28,6 +28,8 @@ This repository (codegame) teaches kids programming by letting them write game A
 ## Rust Workflow
 - Use `cargo new` when adding new crates to keep them up to date.
 - Run `cargo fmt` and `cargo clippy` to keep code quality high.
+- UUse `cargo test` to verify functionality.
+- Use `cargo add` to add dependencies to make sure they are up to date.
 
 ## Documentation
 - Update README when adding new commands or setup steps.
