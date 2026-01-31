@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 
 function App() {
   const [hello, setHello] = useState<string | null>(null)
+  const [gameLoaded, setGameLoaded] = useState(false)
 
   useEffect(() => {
     fetch('/api/hello')
@@ -9,6 +10,13 @@ function App() {
       .then(setHello)
       .catch(() => setHello('failed to load'))
   }, [])
+
+  const loadGame = async () => {
+    const wasmUrl = '/wasm/robotsumo.js'
+    const module = await import(/* @vite-ignore */ wasmUrl)
+    await module.default()
+    setGameLoaded(true)
+  }
 
   return (
     <div className="min-h-screen">
@@ -35,6 +43,15 @@ function App() {
               Run Match
             </button>
           </div>
+          {!gameLoaded && (
+            <button
+              onClick={loadGame}
+              className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500"
+            >
+              Load Robot Sumo
+            </button>
+          )}
+          <canvas id="robotsumo-canvas" className="mt-4 aspect-video w-full rounded-lg bg-black" />
         </section>
 
         <aside className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 shadow-lg">
