@@ -1,8 +1,19 @@
+import { useEffect, useState } from 'react'
+
 function App() {
+  const [hello, setHello] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetch('/api/hello')
+      .then((res) => res.text())
+      .then(setHello)
+      .catch(() => setHello('failed to load'))
+  }, [])
+
   return (
     <div className="min-h-screen">
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-8">
-        <div className="text-lg font-semibold">codegame</div>
+        <div className="text-lg font-semibold">{hello ?? 'loading...'}</div>
         <div className="rounded-full bg-slate-800 px-3 py-1 text-sm text-slate-300">
           robotsumo
         </div>
