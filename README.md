@@ -28,9 +28,10 @@ Once the project scaffold is in place, this section will include:
 /backend       # Rust Axum API and match services
 /frontend      # React app styled with Tailwind
 /games         # Rust/Bevy games (WASM builds)
-	/one-game    # Initial game implementation
+	/robotsumo   # Initial game implementation
 /ai            # Lua scripts and templates
 /docs          # Learning materials and guides
+docker-compose.yml # Local Postgres stack
 ```
 
 ## Contributing
