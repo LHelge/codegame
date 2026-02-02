@@ -39,3 +39,6 @@ This repository (codegame) teaches kids programming by letting them write game A
 - Commit changes to a feature branch and push to the remote.
 - Use Conventional Commits for commit message format.
 - Use the gh CLI to create a pull request targeting the main branch.
+- Ensure all tests pass before creating a pull request.
+- Rebase feature branches onto main before merging.
+
