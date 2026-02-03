@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, ReactNode } from 'react'
-import { getMe, login as apiLogin, register as apiRegister, logout as apiLogout } from '../api/auth'
+import { useState, useEffect, useCallback, type ReactNode } from 'react'
+import { getMe, login as apiLogin, register as apiRegister, logout as apiLogout, type User } from '../api/auth'
 import { AuthContext } from './AuthContextType'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
