@@ -7,6 +7,7 @@ use prelude::*;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use std::net::Ipv4Addr;
 use std::str::FromStr;
+use tower_http::trace::TraceLayer;
 use tracing::{debug, error, info};
 use tracing_subscriber::{EnvFilter, fmt};
 
@@ -42,7 +43,7 @@ async fn app() -> Result<()> {
 
     let state = AppState::new(config.clone(), db);
 
-    let app = routes().with_state(state);
+    let app = routes().with_state(state).layer(TraceLayer::new_for_http());
 
     let listener = tokio::net::TcpListener::bind((Ipv4Addr::UNSPECIFIED, config.server_port))
         .await

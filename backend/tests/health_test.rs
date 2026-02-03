@@ -14,7 +14,7 @@ async fn health_returns_ok() {
     let app = routes::routes().with_state(state);
     let server = TestServer::new(app).unwrap();
 
-    let response = server.get("/health/health").await;
+    let response = server.get("/health").await;
 
     response.assert_status_ok();
     response.assert_json(&serde_json::json!({
