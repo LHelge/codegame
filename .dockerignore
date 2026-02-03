@@ -1,0 +1,40 @@
+# Build artifacts
+target/
+**/target/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+
+# Data files
+data/
+*.db
+*.db-shm
+*.db-wal
+
+# Environment files
+.env
+.env.*
+
+# Node modules (frontend has its own)
+frontend/node_modules/
+frontend/dist/
+
+# Pre-built WASM (we build fresh)
+frontend/public/wasm/
+
+# Documentation
+docs/
+
+# AI scripts not needed in containers
+ai/
+
+# Backend (built separately)
+backend/
