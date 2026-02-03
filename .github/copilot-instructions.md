@@ -28,8 +28,14 @@ This repository (codegame) teaches kids programming by letting them write game A
 ## Rust Workflow
 - Use `cargo new` when adding new crates to keep them up to date.
 - Run `cargo fmt` and `cargo clippy` to keep code quality high.
-- UUse `cargo test` to verify functionality.
+- Use `cargo test` to verify functionality.
 - Use `cargo add` to add dependencies to make sure they are up to date.
+
+## Database Workflow
+- Use `sqlx-cli` for managing database migrations.
+- Create migrations with `sqlx migrate add -r <name>` for reversible migrations.
+- Migrations run automatically on app startup.
+- The database is created automatically if it does not exist.
 
 ## Documentation
 - Update README when adding new commands or setup steps.

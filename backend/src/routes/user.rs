@@ -1,9 +1,10 @@
 use crate::models::User;
 use crate::prelude::*;
+use crate::repositories::UserRepository;
 use axum::{
     Json, Router,
     extract::{Path, State},
-    routing::get,
+    routing::{get, post},
 };
 use axum_extra::extract::{
     CookieJar,
@@ -15,20 +16,137 @@ use serde::Deserialize;
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/", get(me))
-        .route("/user/:id", get(get_user))
-        .route("/auth", get(authenticate))
+        .route("/users", get(list_users).post(create_user))
+        .route(
+            "/users/{id}",
+            get(get_user).put(update_user).delete(delete_user),
+        )
+        .route("/users/{id}/password", post(update_password))
+        .route("/auth", post(authenticate))
 }
 
-async fn me(State(_state): State<AppState>, _claims: Claims) -> Result<Json<User>> {
-    // TODO: Fetch user from database
-    let user = User::new(1, "Test", "test", true)?;
+/// Get the current authenticated user.
+async fn me(State(state): State<AppState>, claims: Claims) -> Result<Json<User>> {
+    let repo = UserRepository::new(&state.db);
+    let user = repo
+        .find_by_id(claims.user_id)
+        .await?
+        .ok_or(Error::NotFound)?;
     Ok(Json(user))
 }
 
-async fn get_user(State(_state): State<AppState>, Path(id): Path<i64>) -> Result<Json<User>> {
-    // TODO: Fetch user from database
-    let user = User::new(id, "Test", "test", false)?;
+/// List all users (admin only).
+async fn list_users(State(state): State<AppState>, claims: Claims) -> Result<Json<Vec<User>>> {
+    if !claims.admin {
+        return Err(Error::NotFound);
+    }
+    let repo = UserRepository::new(&state.db);
+    let users = repo.find_all().await?;
+    Ok(Json(users))
+}
+
+#[derive(Deserialize)]
+struct CreateUserRequest {
+    username: String,
+    password: String,
+    #[serde(default)]
+    admin: bool,
+}
+
+/// Create a new user (admin only).
+async fn create_user(
+    State(state): State<AppState>,
+    claims: Claims,
+    Json(payload): Json<CreateUserRequest>,
+) -> Result<Json<User>> {
+    if !claims.admin {
+        return Err(Error::NotFound);
+    }
+    let repo = UserRepository::new(&state.db);
+    let user = repo
+        .create(&payload.username, &payload.password, payload.admin)
+        .await?;
     Ok(Json(user))
+}
+
+/// Get a user by ID.
+async fn get_user(
+    State(state): State<AppState>,
+    claims: Claims,
+    Path(id): Path<i64>,
+) -> Result<Json<User>> {
+    // Users can only view themselves unless they're admin
+    if claims.user_id != id && !claims.admin {
+        return Err(Error::NotFound);
+    }
+    let repo = UserRepository::new(&state.db);
+    let user = repo.find_by_id(id).await?.ok_or(Error::NotFound)?;
+    Ok(Json(user))
+}
+
+#[derive(Deserialize)]
+struct UpdateUserRequest {
+    username: String,
+    #[serde(default)]
+    admin: bool,
+}
+
+/// Update a user's information (admin only).
+async fn update_user(
+    State(state): State<AppState>,
+    claims: Claims,
+    Path(id): Path<i64>,
+    Json(payload): Json<UpdateUserRequest>,
+) -> Result<Json<User>> {
+    if !claims.admin {
+        return Err(Error::NotFound);
+    }
+    let repo = UserRepository::new(&state.db);
+    let user = repo
+        .update(id, &payload.username, payload.admin)
+        .await?
+        .ok_or(Error::NotFound)?;
+    Ok(Json(user))
+}
+
+#[derive(Deserialize)]
+struct UpdatePasswordRequest {
+    password: String,
+}
+
+/// Update a user's password (user can update their own, admin can update any).
+async fn update_password(
+    State(state): State<AppState>,
+    claims: Claims,
+    Path(id): Path<i64>,
+    Json(payload): Json<UpdatePasswordRequest>,
+) -> Result<Json<()>> {
+    if claims.user_id != id && !claims.admin {
+        return Err(Error::NotFound);
+    }
+    let repo = UserRepository::new(&state.db);
+    let updated = repo.update_password(id, &payload.password).await?;
+    if !updated {
+        return Err(Error::NotFound);
+    }
+    Ok(Json(()))
+}
+
+/// Delete a user (admin only).
+async fn delete_user(
+    State(state): State<AppState>,
+    claims: Claims,
+    Path(id): Path<i64>,
+) -> Result<Json<()>> {
+    if !claims.admin {
+        return Err(Error::NotFound);
+    }
+    let repo = UserRepository::new(&state.db);
+    let deleted = repo.delete(id).await?;
+    if !deleted {
+        return Err(Error::NotFound);
+    }
+    Ok(Json(()))
 }
 
 #[derive(Deserialize)]
@@ -37,13 +155,17 @@ struct AuthRequest {
     password: String,
 }
 
+/// Authenticate a user and return a JWT token in a cookie.
 async fn authenticate(
     cookies: CookieJar,
     State(state): State<AppState>,
     Json(payload): Json<AuthRequest>,
 ) -> Result<(CookieJar, Json<User>)> {
-    // TODO: Get user from database
-    let user = User::new(1, payload.username, "test", true)?;
+    let repo = UserRepository::new(&state.db);
+    let user = repo
+        .find_by_username(&payload.username)
+        .await?
+        .ok_or(Error::NotFound)?;
 
     user.verify_password(&payload.password)?;
 
