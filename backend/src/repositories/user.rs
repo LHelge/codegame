@@ -1,6 +1,6 @@
 use sqlx::SqlitePool;
 
-use crate::models::User;
+use crate::models::{User, UserError};
 use crate::prelude::*;
 
 /// Repository for user database operations.
@@ -30,7 +30,16 @@ impl<'a> UserRepository<'a> {
         .bind(&user.password_hash)
         .bind(admin)
         .fetch_one(self.db)
-        .await?;
+        .await
+        .map_err(|e| {
+            // Check for unique constraint violation
+            if let sqlx::Error::Database(ref db_err) = e
+                && db_err.message().contains("UNIQUE constraint failed")
+            {
+                return Error::User(UserError::UsernameExists);
+            }
+            Error::Database(e)
+        })?;
 
         Ok(User {
             id: result,
@@ -111,8 +120,7 @@ impl<'a> UserRepository<'a> {
 
     /// Update a user's password.
     pub async fn update_password(&self, id: i64, password: &str) -> Result<bool> {
-        // Create a temporary user to hash the password
-        let temp_user = User::new(0, "", password, false)?;
+        let password_hash = User::hash_password(password)?;
 
         let result = sqlx::query(
             r#"
@@ -121,7 +129,7 @@ impl<'a> UserRepository<'a> {
             WHERE id = ?
             "#,
         )
-        .bind(&temp_user.password_hash)
+        .bind(&password_hash)
         .bind(id)
         .execute(self.db)
         .await?;
@@ -169,7 +177,10 @@ mod tests {
         let pool = setup_test_db().await;
         let repo = UserRepository::new(&pool);
 
-        let user = repo.create("testuser", "password123", false).await.unwrap();
+        let user = repo
+            .create("testuser", "Password123!", false)
+            .await
+            .unwrap();
 
         assert_eq!(user.username, "testuser");
         assert!(!user.admin);
@@ -181,7 +192,10 @@ mod tests {
         let pool = setup_test_db().await;
         let repo = UserRepository::new(&pool);
 
-        let created = repo.create("testuser", "password123", false).await.unwrap();
+        let created = repo
+            .create("testuser", "Password123!", false)
+            .await
+            .unwrap();
         let found = repo.find_by_id(created.id).await.unwrap();
 
         assert!(found.is_some());
@@ -193,7 +207,9 @@ mod tests {
         let pool = setup_test_db().await;
         let repo = UserRepository::new(&pool);
 
-        repo.create("testuser", "password123", false).await.unwrap();
+        repo.create("testuser", "Password123!", false)
+            .await
+            .unwrap();
         let found = repo.find_by_username("testuser").await.unwrap();
 
         assert!(found.is_some());
@@ -205,7 +221,10 @@ mod tests {
         let pool = setup_test_db().await;
         let repo = UserRepository::new(&pool);
 
-        let created = repo.create("testuser", "password123", false).await.unwrap();
+        let created = repo
+            .create("testuser", "Password123!", false)
+            .await
+            .unwrap();
         let updated = repo.update(created.id, "newusername", true).await.unwrap();
 
         assert!(updated.is_some());
@@ -219,12 +238,41 @@ mod tests {
         let pool = setup_test_db().await;
         let repo = UserRepository::new(&pool);
 
-        let created = repo.create("testuser", "password123", false).await.unwrap();
+        let created = repo
+            .create("testuser", "Password123!", false)
+            .await
+            .unwrap();
         let deleted = repo.delete(created.id).await.unwrap();
 
         assert!(deleted);
 
         let found = repo.find_by_id(created.id).await.unwrap();
         assert!(found.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_create_user_with_short_username_fails() {
+        let pool = setup_test_db().await;
+        let repo = UserRepository::new(&pool);
+
+        let result = repo.create("ab", "Password123!", false).await;
+
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_create_duplicate_username_fails() {
+        let pool = setup_test_db().await;
+        let repo = UserRepository::new(&pool);
+
+        // Create first user
+        repo.create("testuser", "Password123!", false)
+            .await
+            .unwrap();
+
+        // Try to create second user with same username
+        let result = repo.create("testuser", "Password456!", false).await;
+
+        assert!(result.is_err());
     }
 }
