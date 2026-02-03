@@ -23,13 +23,22 @@ This repository (codegame) teaches kids programming by letting them write game A
 ## Safety and Simplicity
 - Do not introduce external dependencies unless required.
 - Keep runtime and tooling easy to set up for kids.
-- Prefer Docker Compose for local backend + Postgres.
 
 ## Rust Workflow
 - Use `cargo new` when adding new crates to keep them up to date.
 - Run `cargo fmt` and `cargo clippy` to keep code quality high.
 - Use `cargo test` to verify functionality.
 - Use `cargo add` to add dependencies to make sure they are up to date.
+- **Always run `cargo fmt && cargo clippy` after making changes.**
+
+## Testing
+- Run all tests with `cargo test` from the workspace root or backend directory.
+- Unit tests live alongside source code in `#[cfg(test)]` modules.
+- Integration tests for the backend API live in `backend/tests/`.
+- Use `axum-test` crate for HTTP integration tests (in-process, no server needed).
+- Test utilities are in `backend/tests/common/mod.rs`.
+- Each test creates an isolated in-memory SQLite database with migrations applied.
+- Use `common::create_test_token()` to generate JWT tokens for authenticated requests.
 
 ## Database Workflow
 - Use `sqlx-cli` for managing database migrations.
