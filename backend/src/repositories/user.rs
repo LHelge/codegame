@@ -1,7 +1,6 @@
-use sqlx::SqlitePool;
-
 use crate::models::{User, UserError};
 use crate::prelude::*;
+use sqlx::SqlitePool;
 
 /// Repository for user database operations.
 /// Uses the repository pattern to abstract database access.
@@ -51,7 +50,8 @@ impl<'a> UserRepository<'a> {
 
     /// Find a user by their ID.
     pub async fn find_by_id(&self, id: i64) -> Result<Option<User>> {
-        let row = sqlx::query!(
+        let user = sqlx::query_as!(
+            User,
             r#"
             SELECT id, username, password_hash, admin as "admin: bool"
             FROM users
@@ -62,17 +62,13 @@ impl<'a> UserRepository<'a> {
         .fetch_optional(self.db)
         .await?;
 
-        Ok(row.map(|r| User {
-            id: r.id,
-            username: r.username,
-            password_hash: r.password_hash,
-            admin: r.admin,
-        }))
+        Ok(user)
     }
 
     /// Find a user by their username.
     pub async fn find_by_username(&self, username: &str) -> Result<Option<User>> {
-        let row = sqlx::query!(
+        let user = sqlx::query_as!(
+            User,
             r#"
             SELECT id, username, password_hash, admin as "admin: bool"
             FROM users
@@ -83,17 +79,13 @@ impl<'a> UserRepository<'a> {
         .fetch_optional(self.db)
         .await?;
 
-        Ok(row.map(|r| User {
-            id: r.id,
-            username: r.username,
-            password_hash: r.password_hash,
-            admin: r.admin,
-        }))
+        Ok(user)
     }
 
     /// Get all users from the database.
     pub async fn find_all(&self) -> Result<Vec<User>> {
-        let rows = sqlx::query!(
+        let users = sqlx::query_as!(
+            User,
             r#"
             SELECT id, username, password_hash, admin as "admin: bool"
             FROM users
@@ -103,15 +95,7 @@ impl<'a> UserRepository<'a> {
         .fetch_all(self.db)
         .await?;
 
-        Ok(rows
-            .into_iter()
-            .map(|r| User {
-                id: r.id,
-                username: r.username,
-                password_hash: r.password_hash,
-                admin: r.admin,
-            })
-            .collect())
+        Ok(users)
     }
 
     /// Update a user's information.
