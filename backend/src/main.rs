@@ -1,10 +1,12 @@
 mod models;
 mod prelude;
+mod repositories;
 mod routes;
 
 use prelude::*;
-use sqlx::SqlitePool;
+use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use std::net::Ipv4Addr;
+use std::str::FromStr;
 use tracing::{debug, error, info};
 use tracing_subscriber::{EnvFilter, fmt};
 
@@ -26,7 +28,17 @@ async fn app() -> Result<()> {
     let config = Config::from_env()?;
     debug!("Loaded configuration from environment: {:#?}", config);
 
-    let db = SqlitePool::connect(&config.database_url).await?;
+    // Create database if it doesn't exist and connect
+    let options = SqliteConnectOptions::from_str(&config.database_url)?.create_if_missing(true);
+    let db = SqlitePoolOptions::new()
+        .max_connections(5)
+        .connect_with(options)
+        .await?;
+
+    // Run migrations
+    info!("Running database migrations...");
+    sqlx::migrate!().run(&db).await?;
+    info!("Migrations completed successfully");
 
     let state = AppState::new(config.clone(), db);
 

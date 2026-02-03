@@ -3,20 +3,18 @@ use argon2::{
     password_hash::{PasswordHasher, PasswordVerifier, SaltString, rand_core::OsRng},
 };
 use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum UserError {
     #[error("Password hashing error: {0}")]
     PasswordHashError(#[from] argon2::password_hash::Error),
-
-    #[error("Invalid password")]
-    InvalidPassword,
 }
 
 pub type Result<T> = std::result::Result<T, UserError>;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct User {
     pub id: i64,
 
