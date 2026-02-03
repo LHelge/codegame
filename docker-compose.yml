@@ -1,0 +1,28 @@
+services:
+  backend:
+    build:
+      context: backend
+      dockerfile: Dockerfile
+    environment:
+      - RUST_LOG=info
+      - DATABASE_URL=sqlite:/app/data/codegame.db
+      - JWT_SECRET=${JWT_SECRET:-development-secret-change-in-production}
+    volumes:
+      - backend-data:/app/data
+    # Not exposed externally - accessed via frontend proxy
+    expose:
+      - "3000"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  backend-data:

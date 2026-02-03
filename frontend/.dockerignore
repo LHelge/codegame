@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Build output (will be created during build)
+dist/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+
+# Environment files
+.env
+.env.*
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test coverage
+coverage/
+
+# Pre-built WASM files (we build fresh in Docker)
+public/wasm/

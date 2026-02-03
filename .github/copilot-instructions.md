@@ -67,3 +67,16 @@ This repository (codegame) teaches kids programming by letting them write game A
 - CI checks: `cargo fmt --check`, `cargo clippy`, `cargo test`.
 - All CI checks must pass before merging.
 
+## Releases
+- Create releases by pushing semver tags: `git tag v1.0.0 && git push --tags`
+- CI automatically builds Docker images (amd64) and pushes to ghcr.io.
+- Images: `ghcr.io/<owner>/codegame-backend` and `ghcr.io/<owner>/codegame-frontend`
+- Tags follow semver: `v1.2.3` creates tags `1.2.3`, `1.2`, `1`, and `latest`.
+- A GitHub Release is automatically created with release notes.
+
+## Docker
+- Backend and frontend have multistage Dockerfiles for minimal production images.
+- Backend uses distroless base image (~20MB).
+- Frontend uses nginx-alpine and includes WASM game builds.
+- Use `docker compose up` to run the full stack locally in containers.
+- For local development without containers, run `cargo run` in backend/ and `npm run dev` in frontend/.

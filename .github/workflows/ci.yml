@@ -8,34 +8,77 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  SQLX_OFFLINE: true
 
 jobs:
-  fmt:
-    name: Format
+  backend-fmt:
+    name: Backend Format
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check formatting
+        run: cargo fmt -- --check
+
+  backend-clippy:
+    name: Backend Clippy
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      SQLX_OFFLINE: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: backend -> target
+      - name: Run clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+  backend-test:
+    name: Backend Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      SQLX_OFFLINE: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: backend -> target
+      - name: Run tests
+        run: cargo test
+
+  games-fmt:
+    name: Games Format
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Check formatting
-        run: cargo fmt --all -- --check
+        run: |
+          for game in games/*/; do
+            echo "Checking $game"
+            cargo fmt --manifest-path "${game}Cargo.toml" -- --check
+          done
 
-  clippy:
-    name: Clippy
+  games-clippy:
+    name: Games Clippy
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
-      - name: Run clippy
-        run: cargo clippy --all-targets --all-features -- -D warnings
-
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: Swatinem/rust-cache@v2
-      - name: Run tests
-        run: cargo test --all
+        with:
+          workspaces: games/robotsumo -> target
+      - name: Run clippy on games
+        run: |
+          for game in games/*/; do
+            echo "Checking $game"
+            cargo clippy --manifest-path "${game}Cargo.toml" --all-targets -- -D warnings
+          done
 
   frontend:
     name: Frontend
