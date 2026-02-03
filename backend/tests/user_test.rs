@@ -109,7 +109,7 @@ async fn me_with_valid_token_returns_user() {
 
     // Get current user
     let response = server
-        .get("/users")
+        .get("/users/me")
         .add_cookie(Cookie::new("token", token))
         .await;
 
@@ -123,7 +123,7 @@ async fn me_with_valid_token_returns_user() {
 async fn me_without_token_returns_unauthorized() {
     let (server, _state) = setup_server().await;
 
-    let response = server.get("/users").await;
+    let response = server.get("/users/me").await;
 
     response.assert_status_unauthorized();
 }
@@ -154,7 +154,7 @@ async fn list_users_as_admin_returns_all_users() {
 
     // List users
     let response = server
-        .get("/users/users")
+        .get("/users")
         .add_cookie(Cookie::new("token", token))
         .await;
 
@@ -179,7 +179,7 @@ async fn list_users_as_non_admin_returns_not_found() {
 
     // Try to list users
     let response = server
-        .get("/users/users")
+        .get("/users")
         .add_cookie(Cookie::new("token", token))
         .await;
 
@@ -206,7 +206,7 @@ async fn create_user_as_admin_succeeds() {
 
     // Create new user
     let response = server
-        .post("/users/users")
+        .post("/users")
         .add_cookie(Cookie::new("token", token))
         .json(&json!({
             "username": "newuser",
@@ -237,7 +237,7 @@ async fn create_user_as_non_admin_fails() {
 
     // Try to create new user
     let response = server
-        .post("/users/users")
+        .post("/users")
         .add_cookie(Cookie::new("token", token))
         .json(&json!({
             "username": "newuser",
@@ -269,7 +269,7 @@ async fn get_own_user_succeeds() {
 
     // Get user
     let response = server
-        .get(&format!("/users/users/{}", user.id))
+        .get(&format!("/users/{}", user.id))
         .add_cookie(Cookie::new("token", token))
         .await;
 
@@ -298,7 +298,7 @@ async fn get_other_user_as_non_admin_fails() {
 
     // Try to get user2
     let response = server
-        .get(&format!("/users/users/{}", user2.id))
+        .get(&format!("/users/{}", user2.id))
         .add_cookie(Cookie::new("token", token))
         .await;
 
@@ -325,7 +325,7 @@ async fn get_other_user_as_admin_succeeds() {
 
     // Get the regular user
     let response = server
-        .get(&format!("/users/users/{}", user.id))
+        .get(&format!("/users/{}", user.id))
         .add_cookie(Cookie::new("token", token))
         .await;
 
@@ -358,7 +358,7 @@ async fn update_user_as_admin_succeeds() {
 
     // Update the user
     let response = server
-        .put(&format!("/users/users/{}", user.id))
+        .put(&format!("/users/{}", user.id))
         .add_cookie(Cookie::new("token", token))
         .json(&json!({
             "username": "updateduser",
@@ -392,7 +392,7 @@ async fn update_own_password_succeeds() {
 
     // Update password
     let response = server
-        .post(&format!("/users/users/{}/password", user.id))
+        .post(&format!("/users/{}/password", user.id))
         .add_cookie(Cookie::new("token", token))
         .json(&json!({
             "password": "NewPassword1!"
@@ -437,7 +437,7 @@ async fn delete_user_as_admin_succeeds() {
 
     // Delete the user
     let response = server
-        .delete(&format!("/users/users/{}", user.id))
+        .delete(&format!("/users/{}", user.id))
         .add_cookie(Cookie::new("token", token.clone()))
         .await;
 
@@ -445,7 +445,7 @@ async fn delete_user_as_admin_succeeds() {
 
     // Verify user is deleted
     let get_response = server
-        .get(&format!("/users/users/{}", user.id))
+        .get(&format!("/users/{}", user.id))
         .add_cookie(Cookie::new("token", token))
         .await;
 
@@ -472,7 +472,7 @@ async fn delete_user_as_non_admin_fails() {
 
     // Try to delete user2
     let response = server
-        .delete(&format!("/users/users/{}", user2.id))
+        .delete(&format!("/users/{}", user2.id))
         .add_cookie(Cookie::new("token", token))
         .await;
 
@@ -498,7 +498,7 @@ async fn create_user_with_weak_password_fails() {
 
     // Try to create user with password too short
     let response = server
-        .post("/users/users")
+        .post("/users")
         .add_cookie(Cookie::new("token", token.clone()))
         .json(&json!({
             "username": "newuser",
@@ -525,7 +525,7 @@ async fn create_user_with_strong_password_succeeds() {
 
     // Create user with strong password
     let response = server
-        .post("/users/users")
+        .post("/users")
         .add_cookie(Cookie::new("token", token))
         .json(&json!({
             "username": "newuser",
@@ -554,7 +554,7 @@ async fn update_password_with_weak_password_fails() {
 
     // Try to update with weak password
     let response = server
-        .post(&format!("/users/users/{}/password", user.id))
+        .post(&format!("/users/{}/password", user.id))
         .add_cookie(Cookie::new("token", token))
         .json(&json!({
             "password": "weak"
@@ -579,7 +579,7 @@ async fn update_password_with_strong_password_succeeds() {
 
     // Update with strong password
     let response = server
-        .post(&format!("/users/users/{}/password", user.id))
+        .post(&format!("/users/{}/password", user.id))
         .add_cookie(Cookie::new("token", token))
         .json(&json!({
             "password": "NewPassword1!"
@@ -615,7 +615,7 @@ async fn auth_after_password_change_with_old_password_fails() {
 
     // Update password
     server
-        .post(&format!("/users/users/{}/password", user.id))
+        .post(&format!("/users/{}/password", user.id))
         .add_cookie(Cookie::new("token", token))
         .json(&json!({
             "password": "NewPassword1!"
@@ -654,7 +654,7 @@ async fn create_user_with_short_username_fails() {
 
     // Try to create user with username too short
     let response = server
-        .post("/users/users")
+        .post("/users")
         .add_cookie(Cookie::new("token", token))
         .json(&json!({
             "username": "ab",
@@ -681,7 +681,7 @@ async fn create_user_with_duplicate_username_fails() {
 
     // Create first user
     server
-        .post("/users/users")
+        .post("/users")
         .add_cookie(Cookie::new("token", token.clone()))
         .json(&json!({
             "username": "testuser",
@@ -693,7 +693,7 @@ async fn create_user_with_duplicate_username_fails() {
 
     // Try to create second user with same username
     let response = server
-        .post("/users/users")
+        .post("/users")
         .add_cookie(Cookie::new("token", token))
         .json(&json!({
             "username": "testuser",
@@ -720,7 +720,7 @@ async fn create_user_with_valid_username_succeeds() {
 
     // Create user with valid 3-char username
     let response = server
-        .post("/users/users")
+        .post("/users")
         .add_cookie(Cookie::new("token", token))
         .json(&json!({
             "username": "abc",
@@ -732,4 +732,113 @@ async fn create_user_with_valid_username_succeeds() {
     response.assert_status_ok();
     let body: serde_json::Value = response.json();
     assert_eq!(body["username"], "abc");
+}
+
+// ============================================================================
+// Register Endpoint Tests
+// ============================================================================
+
+#[tokio::test]
+async fn register_with_valid_credentials_succeeds() {
+    let (server, _state) = setup_server().await;
+
+    let response = server
+        .post("/users/register")
+        .json(&json!({
+            "username": "newuser",
+            "password": "Password123!"
+        }))
+        .await;
+
+    response.assert_status_ok();
+    let body: serde_json::Value = response.json();
+    assert_eq!(body["username"], "newuser");
+    assert_eq!(body["admin"], false);
+
+    // Check that a cookie was set
+    let cookies = response.cookie("token");
+    assert!(!cookies.value().is_empty(), "Token cookie should be set");
+}
+
+#[tokio::test]
+async fn register_with_weak_password_fails() {
+    let (server, _state) = setup_server().await;
+
+    let response = server
+        .post("/users/register")
+        .json(&json!({
+            "username": "newuser",
+            "password": "weak"
+        }))
+        .await;
+
+    response.assert_status_not_ok();
+}
+
+#[tokio::test]
+async fn register_with_short_username_fails() {
+    let (server, _state) = setup_server().await;
+
+    let response = server
+        .post("/users/register")
+        .json(&json!({
+            "username": "ab",
+            "password": "Password123!"
+        }))
+        .await;
+
+    response.assert_status_not_ok();
+}
+
+#[tokio::test]
+async fn register_with_duplicate_username_fails() {
+    let (server, state) = setup_server().await;
+
+    // Create an existing user
+    let repo = UserRepository::new(&state.db);
+    repo.create("existinguser", "Password123!", false)
+        .await
+        .expect("Failed to create user");
+
+    let response = server
+        .post("/users/register")
+        .json(&json!({
+            "username": "existinguser",
+            "password": "AnotherPass1!"
+        }))
+        .await;
+
+    response.assert_status_not_ok();
+}
+
+// ============================================================================
+// Logout Endpoint Tests
+// ============================================================================
+
+#[tokio::test]
+async fn logout_clears_token_cookie() {
+    let (server, state) = setup_server().await;
+
+    // Create a user and authenticate
+    let repo = UserRepository::new(&state.db);
+    let user = repo
+        .create("testuser", "Password123!", false)
+        .await
+        .expect("Failed to create user");
+
+    let token = common::create_test_token(user.id, false, "testuser", &state.config.jwt_secret);
+
+    let response = server
+        .post("/users/logout")
+        .add_cookie(Cookie::new("token", token))
+        .await;
+
+    response.assert_status_ok();
+
+    // The cookie should be cleared (empty or removed)
+    let cookies = response.maybe_cookie("token");
+    assert!(
+        cookies.is_none() || cookies.unwrap().value().is_empty(),
+        "Token cookie should be cleared"
+    );
 }

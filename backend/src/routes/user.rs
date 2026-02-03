@@ -15,14 +15,13 @@ use serde::Deserialize;
 
 pub fn routes() -> Router<AppState> {
     Router::new()
-        .route("/", get(me))
-        .route("/users", get(list_users).post(create_user))
-        .route(
-            "/users/{id}",
-            get(get_user).put(update_user).delete(delete_user),
-        )
-        .route("/users/{id}/password", post(update_password))
+        .route("/me", get(me))
+        .route("/", get(list_users).post(create_user))
+        .route("/{id}", get(get_user).put(update_user).delete(delete_user))
+        .route("/{id}/password", post(update_password))
         .route("/auth", post(authenticate))
+        .route("/register", post(register))
+        .route("/logout", post(logout))
 }
 
 /// Get the current authenticated user.
@@ -179,4 +178,38 @@ async fn authenticate(
         .build();
 
     Ok((cookies.add(cookie), Json(user)))
+}
+
+#[derive(Deserialize)]
+struct RegisterRequest {
+    username: String,
+    password: String,
+}
+
+/// Register a new user (public endpoint).
+async fn register(
+    cookies: CookieJar,
+    State(state): State<AppState>,
+    Json(payload): Json<RegisterRequest>,
+) -> Result<(CookieJar, Json<User>)> {
+    let repo = UserRepository::new(&state.db);
+    let user = repo
+        .create(&payload.username, &payload.password, false)
+        .await?;
+
+    let token = Claims::new(user.id, user.admin, &user.username, Duration::hours(1))
+        .encode(&state.config.jwt_secret)?;
+
+    let cookie = Cookie::build(("token", token))
+        .same_site(SameSite::Strict)
+        .secure(true)
+        .http_only(true)
+        .build();
+
+    Ok((cookies.add(cookie), Json(user)))
+}
+
+/// Logout the current user by clearing the token cookie.
+async fn logout(cookies: CookieJar) -> CookieJar {
+    cookies.remove(Cookie::from("token"))
 }

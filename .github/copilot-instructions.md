@@ -9,6 +9,7 @@ This repository (codegame) teaches kids programming by letting them write game A
 - Avoid unnecessary abstractions.
 - Prefer deterministic, testable logic.
 - Make small, isolated edits and follow a TDD workflow when possible.
+- **Do not use `sed` or other terminal commands to modify files.** Use the editor tools instead so changes show up in VSCode diffs.
 
 ## Language and Style
 - Backend: Rust with Axum.

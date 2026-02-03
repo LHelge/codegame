@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
+import { TopBar } from './components/TopBar'
+import { AuthModal } from './components/AuthModal'
 
 function App() {
   const [hello, setHello] = useState<string | null>(null)
   const [gameLoaded, setGameLoaded] = useState(false)
+  const [showAuthModal, setShowAuthModal] = useState(false)
 
   useEffect(() => {
     fetch('/api/hello')
@@ -20,15 +23,12 @@ function App() {
 
   return (
     <div className="min-h-screen">
-      <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-8">
-        <div className="text-lg font-semibold">{hello ?? 'loading...'}</div>
-        <div className="rounded-full bg-slate-800 px-3 py-1 text-sm text-slate-300">
-          robotsumo
-        </div>
-      </header>
+      <TopBar onLoginClick={() => setShowAuthModal(true)} />
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
 
       <main className="mx-auto grid w-full max-w-5xl gap-10 px-6 pb-16 md:grid-cols-[2fr_1fr]">
         <section className="space-y-6">
+          <p className="text-sm text-slate-400">{hello ?? 'loading...'}</p>
           <h1 className="text-4xl font-bold leading-tight text-white md:text-5xl">
             Teach game AI by coding Lua scripts.
           </h1>

@@ -14,7 +14,7 @@ async fn hello_returns_hello_world() {
     let app = routes::routes().with_state(state);
     let server = TestServer::new(app).unwrap();
 
-    let response = server.get("/hello/hello").await;
+    let response = server.get("/hello").await;
 
     response.assert_status_ok();
     response.assert_text("hello world");
