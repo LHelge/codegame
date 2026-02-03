@@ -45,6 +45,10 @@ This repository (codegame) teaches kids programming by letting them write game A
 - Create migrations with `sqlx migrate add -r <name>` for reversible migrations.
 - Migrations run automatically on app startup.
 - The database is created automatically if it does not exist.
+- **Use compile-time checked queries** with `sqlx::query!` and `sqlx::query_scalar!` macros.
+- **Run `cargo sqlx prepare --workspace` after changing queries or migrations** to update offline metadata.
+- Commit the `.sqlx` directory to the repository for CI offline builds.
+- For SQLite booleans, use type annotations: `admin as "admin: bool"` in SELECT queries.
 
 ## Documentation
 - Update README when adding new commands or setup steps.
@@ -56,4 +60,9 @@ This repository (codegame) teaches kids programming by letting them write game A
 - Use the gh CLI to create a pull request targeting the main branch.
 - Ensure all tests pass before creating a pull request.
 - Rebase feature branches onto main before merging.
+
+## CI/CD
+- GitHub Actions runs on all PRs and pushes to main.
+- CI checks: `cargo fmt --check`, `cargo clippy`, `cargo test`.
+- All CI checks must pass before merging.
 

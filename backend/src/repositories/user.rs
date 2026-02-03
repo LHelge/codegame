@@ -19,16 +19,16 @@ impl<'a> UserRepository<'a> {
     pub async fn create(&self, username: &str, password: &str, admin: bool) -> Result<User> {
         let user = User::new(0, username, password, admin)?;
 
-        let result = sqlx::query_scalar::<_, i64>(
+        let result = sqlx::query_scalar!(
             r#"
             INSERT INTO users (username, password_hash, admin)
             VALUES (?, ?, ?)
             RETURNING id
             "#,
+            user.username,
+            user.password_hash,
+            admin,
         )
-        .bind(&user.username)
-        .bind(&user.password_hash)
-        .bind(admin)
         .fetch_one(self.db)
         .await
         .map_err(|e| {
@@ -51,41 +51,51 @@ impl<'a> UserRepository<'a> {
 
     /// Find a user by their ID.
     pub async fn find_by_id(&self, id: i64) -> Result<Option<User>> {
-        let user = sqlx::query_as::<_, User>(
+        let row = sqlx::query!(
             r#"
-            SELECT id, username, password_hash, admin
+            SELECT id, username, password_hash, admin as "admin: bool"
             FROM users
             WHERE id = ?
             "#,
+            id,
         )
-        .bind(id)
         .fetch_optional(self.db)
         .await?;
 
-        Ok(user)
+        Ok(row.map(|r| User {
+            id: r.id,
+            username: r.username,
+            password_hash: r.password_hash,
+            admin: r.admin,
+        }))
     }
 
     /// Find a user by their username.
     pub async fn find_by_username(&self, username: &str) -> Result<Option<User>> {
-        let user = sqlx::query_as::<_, User>(
+        let row = sqlx::query!(
             r#"
-            SELECT id, username, password_hash, admin
+            SELECT id, username, password_hash, admin as "admin: bool"
             FROM users
             WHERE username = ?
             "#,
+            username,
         )
-        .bind(username)
         .fetch_optional(self.db)
         .await?;
 
-        Ok(user)
+        Ok(row.map(|r| User {
+            id: r.id,
+            username: r.username,
+            password_hash: r.password_hash,
+            admin: r.admin,
+        }))
     }
 
     /// Get all users from the database.
     pub async fn find_all(&self) -> Result<Vec<User>> {
-        let users = sqlx::query_as::<_, User>(
+        let rows = sqlx::query!(
             r#"
-            SELECT id, username, password_hash, admin
+            SELECT id, username, password_hash, admin as "admin: bool"
             FROM users
             ORDER BY id
             "#,
@@ -93,21 +103,29 @@ impl<'a> UserRepository<'a> {
         .fetch_all(self.db)
         .await?;
 
-        Ok(users)
+        Ok(rows
+            .into_iter()
+            .map(|r| User {
+                id: r.id,
+                username: r.username,
+                password_hash: r.password_hash,
+                admin: r.admin,
+            })
+            .collect())
     }
 
     /// Update a user's information.
     pub async fn update(&self, id: i64, username: &str, admin: bool) -> Result<Option<User>> {
-        let result = sqlx::query(
+        let result = sqlx::query!(
             r#"
             UPDATE users
             SET username = ?, admin = ?, updated_at = datetime('now')
             WHERE id = ?
             "#,
+            username,
+            admin,
+            id,
         )
-        .bind(username)
-        .bind(admin)
-        .bind(id)
         .execute(self.db)
         .await?;
 
@@ -122,15 +140,15 @@ impl<'a> UserRepository<'a> {
     pub async fn update_password(&self, id: i64, password: &str) -> Result<bool> {
         let password_hash = User::hash_password(password)?;
 
-        let result = sqlx::query(
+        let result = sqlx::query!(
             r#"
             UPDATE users
             SET password_hash = ?, updated_at = datetime('now')
             WHERE id = ?
             "#,
+            password_hash,
+            id,
         )
-        .bind(&password_hash)
-        .bind(id)
         .execute(self.db)
         .await?;
 
@@ -139,13 +157,13 @@ impl<'a> UserRepository<'a> {
 
     /// Delete a user by their ID.
     pub async fn delete(&self, id: i64) -> Result<bool> {
-        let result = sqlx::query(
+        let result = sqlx::query!(
             r#"
             DELETE FROM users
             WHERE id = ?
             "#,
+            id,
         )
-        .bind(id)
         .execute(self.db)
         .await?;
 
