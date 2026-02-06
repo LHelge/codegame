@@ -12,6 +12,7 @@ export async function login(username: string, password: string): Promise<User> {
     const res = await fetch('/api/users/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ username, password }),
     })
 
@@ -29,6 +30,7 @@ export async function register(username: string, password: string): Promise<User
     const res = await fetch('/api/users/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ username, password }),
     })
 
@@ -50,11 +52,11 @@ export async function register(username: string, password: string): Promise<User
 }
 
 export async function logout(): Promise<void> {
-    await fetch('/api/users/logout', { method: 'POST' })
+    await fetch('/api/users/logout', { method: 'POST', credentials: 'include' })
 }
 
 export async function getMe(): Promise<User | null> {
-    const res = await fetch('/api/users/me')
+    const res = await fetch('/api/users/me', { credentials: 'include' })
 
     if (!res.ok) {
         return null

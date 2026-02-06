@@ -1,12 +1,15 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { fetchGame, type Game } from '../api/games'
+import { AgentEditor } from '../components/AgentEditor'
+import { useAuth } from '../context/useAuth'
 
 // Track globally loaded WASM modules to prevent duplicate loads
 const loadedWasmModules = new Set<string>()
 
 export function GamePage() {
     const { name } = useParams<{ name: string }>()
+    const { user } = useAuth()
     const [game, setGame] = useState<Game | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -132,7 +135,7 @@ export function GamePage() {
     }
 
     return (
-        <div className="mx-auto max-w-4xl px-6 py-8">
+        <div className="mx-auto max-w-6xl px-6 py-8">
             <div className="mb-6 flex items-center gap-4">
                 <Link to="/games" className="text-slate-400 hover:text-white">
                     ← Games
@@ -158,20 +161,30 @@ export function GamePage() {
                 </div>
             )}
 
-            {!gameLoaded && !needsRefresh && (
-                <button
-                    onClick={loadWasm}
-                    disabled={wasmLoading}
-                    className="mb-4 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                    {wasmLoading ? 'Loading...' : 'Load Game'}
-                </button>
-            )}
+            <div className="space-y-6">
+                {/* Game Canvas Section */}
+                <div>
+                    {!gameLoaded && !needsRefresh && (
+                        <button
+                            onClick={loadWasm}
+                            disabled={wasmLoading}
+                            className="mb-4 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            {wasmLoading ? 'Loading...' : 'Load Game'}
+                        </button>
+                    )}
 
-            <canvas
-                id={`${game.name}-canvas`}
-                className="aspect-video w-full rounded-lg bg-black"
-            />
+                    <canvas
+                        id={`${game.name}-canvas`}
+                        className="aspect-video w-full rounded-lg bg-black"
+                    />
+                </div>
+
+                {/* Agent Editor Section */}
+                <div className="h-[400px]">
+                    <AgentEditor gameId={game.id} isLoggedIn={!!user} />
+                </div>
+            </div>
         </div>
     )
 }

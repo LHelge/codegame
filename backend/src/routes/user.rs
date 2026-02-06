@@ -172,9 +172,9 @@ async fn authenticate(
         .encode(&state.config.jwt_secret)?;
 
     let cookie = Cookie::build(("token", token))
-        .same_site(SameSite::Strict)
-        .secure(true)
+        .same_site(SameSite::Lax)
         .http_only(true)
+        .path("/")
         .build();
 
     Ok((cookies.add(cookie), Json(user)))
@@ -201,9 +201,9 @@ async fn register(
         .encode(&state.config.jwt_secret)?;
 
     let cookie = Cookie::build(("token", token))
-        .same_site(SameSite::Strict)
-        .secure(true)
+        .same_site(SameSite::Lax)
         .http_only(true)
+        .path("/")
         .build();
 
     Ok((cookies.add(cookie), Json(user)))
