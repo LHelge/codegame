@@ -1,4 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import CodeMirror from '@uiw/react-codemirror'
+import { StreamLanguage } from '@codemirror/language'
+import { lua } from '@codemirror/legacy-modes/mode/lua'
 import { type Agent, fetchAgents, createAgent, updateAgent, deleteAgent } from '../api/agents'
 
 interface AgentEditorProps {
@@ -57,6 +60,10 @@ export function AgentEditor({ gameId, isLoggedIn }: AgentEditorProps) {
         setIsCreating(true)
         setError(null)
     }
+
+    const onCodeChange = useCallback((value: string) => {
+        setCode(value)
+    }, [])
 
     const handleSave = async () => {
         if (!name.trim()) {
@@ -157,8 +164,8 @@ export function AgentEditor({ gameId, isLoggedIn }: AgentEditorProps) {
                                     <button
                                         onClick={() => selectAgent(agent)}
                                         className={`w-full px-4 py-2 text-left text-sm transition ${selectedAgent?.id === agent.id && !isCreating
-                                                ? 'bg-indigo-600 text-white'
-                                                : 'text-slate-300 hover:bg-slate-700'
+                                            ? 'bg-indigo-600 text-white'
+                                            : 'text-slate-300 hover:bg-slate-700'
                                             }`}
                                     >
                                         <div className="font-medium truncate">{agent.name}</div>
@@ -170,7 +177,7 @@ export function AgentEditor({ gameId, isLoggedIn }: AgentEditorProps) {
                 </div>
 
                 {/* Editor Panel */}
-                <div className="flex min-h-0 flex-1 flex-col p-4">
+                <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4">
                     {selectedAgent || isCreating ? (
                         <>
                             {/* Name Input */}
@@ -188,16 +195,28 @@ export function AgentEditor({ gameId, isLoggedIn }: AgentEditorProps) {
                             </div>
 
                             {/* Code Editor */}
-                            <div className="mb-3 min-h-0 flex-1">
-                                <label className="mb-1 block text-sm font-medium text-slate-300">
+                            <div className="mb-3 h-64 flex-shrink-0 overflow-hidden rounded border border-slate-600">
+                                <label className="block bg-slate-800 px-3 py-2 text-sm font-medium text-slate-300 border-b border-slate-600">
                                     Lua Code
                                 </label>
-                                <textarea
+                                <CodeMirror
                                     value={code}
-                                    onChange={e => setCode(e.target.value)}
+                                    onChange={onCodeChange}
+                                    extensions={[StreamLanguage.define(lua)]}
+                                    theme="dark"
                                     placeholder="-- Write your AI logic here"
-                                    spellCheck={false}
-                                    className="h-[calc(100%-1.5rem)] w-full resize-none rounded border border-slate-600 bg-slate-900 px-3 py-2 font-mono text-sm text-green-400 placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+                                    height="100%"
+                                    style={{ height: 'calc(100% - 2.5rem)' }}
+                                    basicSetup={{
+                                        lineNumbers: true,
+                                        highlightActiveLineGutter: true,
+                                        highlightActiveLine: true,
+                                        foldGutter: true,
+                                        bracketMatching: true,
+                                        closeBrackets: true,
+                                        autocompletion: false,
+                                        indentOnInput: true,
+                                    }}
                                 />
                             </div>
 
