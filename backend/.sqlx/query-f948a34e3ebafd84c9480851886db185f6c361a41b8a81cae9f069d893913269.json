@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n            SELECT id as \"id!\", name, wasm_filename\n            FROM games\n            ORDER BY name\n            ",
+  "query": "\n            SELECT id as \"id!\", name, display_name\n            FROM games\n            WHERE name = ?\n            ",
   "describe": {
     "columns": [
       {
@@ -14,13 +14,13 @@
         "type_info": "Text"
       },
       {
-        "name": "wasm_filename",
+        "name": "display_name",
         "ordinal": 2,
         "type_info": "Text"
       }
     ],
     "parameters": {
-      "Right": 0
+      "Right": 1
     },
     "nullable": [
       true,
@@ -28,5 +28,5 @@
       false
     ]
   },
-  "hash": "bb44a3df8977c6e5d4a45fc384c6c35983ea33b898eb30f1781bc14763ed652b"
+  "hash": "f948a34e3ebafd84c9480851886db185f6c361a41b8a81cae9f069d893913269"
 }

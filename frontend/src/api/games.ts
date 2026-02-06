@@ -1,7 +1,7 @@
 export interface Game {
   id: number
   name: string
-  wasm_filename: string
+  display_name: string
 }
 
 export async function fetchGames(): Promise<Game[]> {
@@ -12,8 +12,8 @@ export async function fetchGames(): Promise<Game[]> {
   return response.json()
 }
 
-export async function fetchGame(id: number): Promise<Game> {
-  const response = await fetch(`/api/games/${id}`)
+export async function fetchGame(name: string): Promise<Game> {
+  const response = await fetch(`/api/games/${name}`)
   if (!response.ok) {
     throw new Error('Failed to fetch game')
   }
