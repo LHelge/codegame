@@ -84,11 +84,15 @@ The dev server runs at http://localhost:5173
 ### Building Games (WASM)
 
 ```bash
+# Install prerequisites (first time only)
 rustup target add wasm32-unknown-unknown
 cargo install wasm-pack
-wasm-pack build games/robotsumo --target web --out-dir ../../frontend/public/wasm/robotsumo
-wasm-pack build games/snake --target web --out-dir ../../frontend/public/wasm/snake
+
+# Build all games
+./scripts/build-games.sh
 ```
+
+The script builds all games and copies them to `frontend/public/wasm/`.
 
 ## Project Structure
 ```
@@ -97,6 +101,7 @@ wasm-pack build games/snake --target web --out-dir ../../frontend/public/wasm/sn
 /games         # Rust/Bevy games (WASM builds)
   /robotsumo   # Robot sumo game
   /snake       # Snake game
+/scripts       # Build and utility scripts
 /ai            # Lua scripts and templates
 /docs          # Learning materials and guides
 ```
