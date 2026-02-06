@@ -19,6 +19,9 @@ WORKDIR /build
 COPY games/robotsumo games/robotsumo
 RUN wasm-pack build games/robotsumo --target web --out-dir /wasm-output/robotsumo
 
+COPY games/snake games/snake
+RUN wasm-pack build games/snake --target web --out-dir /wasm-output/snake
+
 # ==============================================================================
 # Stage 2: Frontend Builder - Build the frontend assets
 # ==============================================================================
