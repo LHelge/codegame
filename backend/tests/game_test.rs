@@ -48,3 +48,30 @@ async fn get_game_by_invalid_id_returns_not_found() {
     let response = server.get("/games/999").await;
     response.assert_status_not_found();
 }
+
+#[tokio::test]
+async fn get_game_by_wasm_filename_returns_game() {
+    let config = common::test_config();
+    let db = common::test_db().await;
+    let state = AppState::new(config, db);
+    let app = routes::routes().with_state(state);
+    let server = TestServer::new(app).unwrap();
+
+    let response = server.get("/games/by-wasm/robotsumo").await;
+    response.assert_status_ok();
+
+    let game: Game = response.json();
+    assert_eq!(game.wasm_filename, "robotsumo");
+}
+
+#[tokio::test]
+async fn get_game_by_invalid_wasm_filename_returns_not_found() {
+    let config = common::test_config();
+    let db = common::test_db().await;
+    let state = AppState::new(config, db);
+    let app = routes::routes().with_state(state);
+    let server = TestServer::new(app).unwrap();
+
+    let response = server.get("/games/by-wasm/nonexistent").await;
+    response.assert_status_not_found();
+}
