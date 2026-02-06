@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { fetchGame, type Game } from '../api/games'
 import { AgentEditor } from '../components/AgentEditor'
+import { GameDocs } from '../components/GameDocs'
 import { useAuth } from '../context/useAuth'
 
 // Track globally loaded WASM modules to prevent duplicate loads
@@ -181,9 +182,12 @@ export function GamePage() {
                 </div>
 
                 {/* Agent Editor Section */}
-                <div className="h-[400px]">
+                <div className="h-[500px]">
                     <AgentEditor gameId={game.id} isLoggedIn={!!user} />
                 </div>
+
+                {/* Documentation Section */}
+                <GameDocs gameName={game.name} />
             </div>
         </div>
     )
