@@ -6,7 +6,7 @@ import { fetchGame, type Game } from '../api/games'
 const loadedWasmModules = new Set<string>()
 
 export function GamePage() {
-    const { id } = useParams<{ id: string }>()
+    const { name } = useParams<{ name: string }>()
     const [game, setGame] = useState<Game | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -16,19 +16,19 @@ export function GamePage() {
     const scriptRef = useRef<HTMLScriptElement | null>(null)
 
     useEffect(() => {
-        if (!id) return
-        fetchGame(parseInt(id, 10))
+        if (!name) return
+        fetchGame(name)
             .then((fetchedGame) => {
                 setGame(fetchedGame)
                 // Check if WASM was already loaded in a previous visit
                 // Bevy games can't reinitialize on a new canvas, so a refresh is needed
-                if (loadedWasmModules.has(fetchedGame.wasm_filename)) {
+                if (loadedWasmModules.has(fetchedGame.name)) {
                     setNeedsRefresh(true)
                 }
             })
             .catch((err) => setError(err.message))
             .finally(() => setLoading(false))
-    }, [id])
+    }, [name])
 
     // Cleanup script tag on unmount
     useEffect(() => {
@@ -44,7 +44,7 @@ export function GamePage() {
         if (!game) return
 
         // Check if already loaded globally
-        if (loadedWasmModules.has(game.wasm_filename)) {
+        if (loadedWasmModules.has(game.name)) {
             setGameLoaded(true)
             return
         }
@@ -60,18 +60,18 @@ export function GamePage() {
         // Load the WASM module by adding a script tag (Vite doesn't allow dynamic imports from /public)
         const script = document.createElement('script')
         script.type = 'module'
-        script.id = `wasm-loader-${game.wasm_filename}`
+        script.id = `wasm-loader-${game.name}`
         script.textContent = `
             (async () => {
                 try {
-                    const init = (await import('/wasm/${game.wasm_filename}/${game.wasm_filename}.js')).default;
+                    const init = (await import('/wasm/${game.name}/${game.name}.js')).default;
                     await init();
-                    window.dispatchEvent(new CustomEvent('wasm-loaded', { detail: { game: '${game.wasm_filename}' } }));
+                    window.dispatchEvent(new CustomEvent('wasm-loaded', { detail: { game: '${game.name}' } }));
                 } catch (err) {
                     // Ignore wasm-bindgen control flow exception (not a real error)
                     const message = err.message || '';
                     if (message.includes("Using exceptions for control flow")) {
-                        window.dispatchEvent(new CustomEvent('wasm-loaded', { detail: { game: '${game.wasm_filename}' } }));
+                        window.dispatchEvent(new CustomEvent('wasm-loaded', { detail: { game: '${game.name}' } }));
                     } else {
                         window.dispatchEvent(new CustomEvent('wasm-error', { detail: { error: message || 'Failed to load game' } }));
                     }
@@ -81,8 +81,8 @@ export function GamePage() {
         scriptRef.current = script
 
         const handleLoaded = (e: CustomEvent<{ game: string }>) => {
-            if (e.detail.game === game.wasm_filename) {
-                loadedWasmModules.add(game.wasm_filename)
+            if (e.detail.game === game.name) {
+                loadedWasmModules.add(game.name)
                 setGameLoaded(true)
                 setWasmLoading(false)
                 cleanup()
@@ -137,7 +137,7 @@ export function GamePage() {
                 <Link to="/games" className="text-slate-400 hover:text-white">
                     ← Games
                 </Link>
-                <h1 className="text-3xl font-bold capitalize text-white">{game.name}</h1>
+                <h1 className="text-3xl font-bold text-white">{game.display_name}</h1>
             </div>
 
             {error && (
@@ -169,7 +169,7 @@ export function GamePage() {
             )}
 
             <canvas
-                id={`${game.wasm_filename}-canvas`}
+                id={`${game.name}-canvas`}
                 className="aspect-video w-full rounded-lg bg-black"
             />
         </div>

@@ -18,7 +18,7 @@ impl<'a> GameRepository<'a> {
         let games = sqlx::query_as!(
             Game,
             r#"
-            SELECT id as "id!", name, wasm_filename
+            SELECT id as "id!", name, display_name
             FROM games
             ORDER BY name
             "#,
@@ -29,33 +29,16 @@ impl<'a> GameRepository<'a> {
         Ok(games)
     }
 
-    /// Find a game by its ID.
-    pub async fn find_by_id(&self, id: i64) -> Result<Option<Game>> {
+    /// Find a game by its unique name.
+    pub async fn find_by_name(&self, name: &str) -> Result<Option<Game>> {
         let game = sqlx::query_as!(
             Game,
             r#"
-            SELECT id as "id!", name, wasm_filename
+            SELECT id as "id!", name, display_name
             FROM games
-            WHERE id = ?
+            WHERE name = ?
             "#,
-            id,
-        )
-        .fetch_optional(self.db)
-        .await?;
-
-        Ok(game)
-    }
-
-    /// Find a game by its WASM filename.
-    pub async fn find_by_wasm_filename(&self, wasm_filename: &str) -> Result<Option<Game>> {
-        let game = sqlx::query_as!(
-            Game,
-            r#"
-            SELECT id as "id!", name, wasm_filename
-            FROM games
-            WHERE wasm_filename = ?
-            "#,
-            wasm_filename,
+            name,
         )
         .fetch_optional(self.db)
         .await?;
@@ -96,31 +79,19 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_find_by_id() {
-        let pool = setup_test_db().await;
-        let repo = GameRepository::new(&pool);
-
-        let game = repo.find_by_id(1).await.expect("Failed to find game");
-        assert!(game.is_some());
-
-        let game = repo.find_by_id(999).await.expect("Failed to find game");
-        assert!(game.is_none());
-    }
-
-    #[tokio::test]
-    async fn test_find_by_wasm_filename() {
+    async fn test_find_by_name() {
         let pool = setup_test_db().await;
         let repo = GameRepository::new(&pool);
 
         let game = repo
-            .find_by_wasm_filename("robotsumo")
+            .find_by_name("robotsumo")
             .await
             .expect("Failed to find game");
         assert!(game.is_some());
-        assert_eq!(game.unwrap().name, "robotsumo");
+        assert_eq!(game.unwrap().display_name, "Robot Sumo");
 
         let game = repo
-            .find_by_wasm_filename("nonexistent")
+            .find_by_name("nonexistent")
             .await
             .expect("Failed to find game");
         assert!(game.is_none());

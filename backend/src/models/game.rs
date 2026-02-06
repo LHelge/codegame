@@ -5,6 +5,8 @@ use sqlx::FromRow;
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct Game {
     pub id: i64,
+    /// URL-friendly unique identifier (matches directory name in games/)
     pub name: String,
-    pub wasm_filename: String,
+    /// Human-friendly display name
+    pub display_name: String,
 }

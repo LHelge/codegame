@@ -37,10 +37,10 @@ export function GamesPage() {
                 {games.map((game) => (
                     <Link
                         key={game.id}
-                        to={`/games/${game.id}`}
+                        to={`/games/${game.name}`}
                         className="rounded-xl border border-slate-700 bg-slate-800/50 p-6 transition hover:border-indigo-500 hover:bg-slate-800"
                     >
-                        <h2 className="text-xl font-semibold capitalize text-white">{game.name}</h2>
+                        <h2 className="text-xl font-semibold text-white">{game.display_name}</h2>
                         <p className="mt-2 text-sm text-slate-400">Click to play</p>
                     </Link>
                 ))}

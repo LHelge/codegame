@@ -2,9 +2,9 @@
 CREATE TABLE games (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
-    wasm_filename TEXT NOT NULL
+    display_name TEXT NOT NULL
 );
 
 -- Insert initial games
-INSERT INTO games (name, wasm_filename) VALUES ('robotsumo', 'robotsumo');
-INSERT INTO games (name, wasm_filename) VALUES ('snake', 'snake');
+INSERT INTO games (name, display_name) VALUES ('robotsumo', 'Robot Sumo');
+INSERT INTO games (name, display_name) VALUES ('snake', 'Snake');
