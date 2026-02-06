@@ -14,13 +14,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /build
 
-# Build all games to WASM
-# Each game is independent - add more COPY + RUN lines for new games
-COPY games/robotsumo games/robotsumo
-RUN wasm-pack build games/robotsumo --target web --out-dir /wasm-output/robotsumo
+# Copy games and build script
+COPY games games
+COPY scripts/build-games.sh scripts/build-games.sh
 
-COPY games/snake games/snake
-RUN wasm-pack build games/snake --target web --out-dir /wasm-output/snake
+# Build all games to WASM using the shared script
+RUN ./scripts/build-games.sh
 
 # ==============================================================================
 # Stage 2: Frontend Builder - Build the frontend assets
@@ -39,7 +38,7 @@ RUN npm ci
 COPY frontend/ .
 
 # Copy WASM builds from wasm-builder
-COPY --from=wasm-builder /wasm-output /app/public/wasm
+COPY --from=wasm-builder /build/frontend/public/wasm /app/public/wasm
 
 # Build the production bundle
 RUN npm run build
