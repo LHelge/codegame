@@ -46,16 +46,16 @@ impl<'a> GameRepository<'a> {
         Ok(game)
     }
 
-    /// Find a game by its name.
-    pub async fn find_by_name(&self, name: &str) -> Result<Option<Game>> {
+    /// Find a game by its WASM filename.
+    pub async fn find_by_wasm_filename(&self, wasm_filename: &str) -> Result<Option<Game>> {
         let game = sqlx::query_as!(
             Game,
             r#"
             SELECT id as "id!", name, wasm_filename
             FROM games
-            WHERE name = ?
+            WHERE wasm_filename = ?
             "#,
-            name,
+            wasm_filename,
         )
         .fetch_optional(self.db)
         .await?;
@@ -108,19 +108,19 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_find_by_name() {
+    async fn test_find_by_wasm_filename() {
         let pool = setup_test_db().await;
         let repo = GameRepository::new(&pool);
 
         let game = repo
-            .find_by_name("robotsumo")
+            .find_by_wasm_filename("robotsumo")
             .await
             .expect("Failed to find game");
         assert!(game.is_some());
-        assert_eq!(game.unwrap().wasm_filename, "robotsumo");
+        assert_eq!(game.unwrap().name, "robotsumo");
 
         let game = repo
-            .find_by_name("nonexistent")
+            .find_by_wasm_filename("nonexistent")
             .await
             .expect("Failed to find game");
         assert!(game.is_none());
