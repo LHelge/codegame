@@ -80,7 +80,7 @@ async fn create_agent_without_auth_fails() {
         .json(&json!({
             "game_id": game_id,
             "name": "Agent",
-            "code": ""
+            "code": "-- code"
         }))
         .await;
 
@@ -88,7 +88,7 @@ async fn create_agent_without_auth_fails() {
 }
 
 #[tokio::test]
-async fn create_agent_with_empty_code_succeeds() {
+async fn create_agent_with_empty_code_fails() {
     let (server, state) = setup_server().await;
     let (_user_id, token) = create_user_with_token(&state, "testuser").await;
     let game_id = get_robotsumo_game_id(&state).await;
@@ -102,9 +102,26 @@ async fn create_agent_with_empty_code_succeeds() {
         }))
         .await;
 
-    response.assert_status_ok();
-    let agent: Agent = response.json();
-    assert_eq!(agent.code, "");
+    response.assert_status_bad_request();
+}
+
+#[tokio::test]
+async fn create_agent_with_whitespace_code_fails() {
+    let (server, state) = setup_server().await;
+    let (_user_id, token) = create_user_with_token(&state, "testuser").await;
+    let game_id = get_robotsumo_game_id(&state).await;
+
+    let response = server
+        .post("/agents")
+        .add_cookie(Cookie::new("token", token))
+        .json(&json!({
+            "game_id": game_id,
+            "name": "Empty Agent",
+            "code": "   \n\t  "
+        }))
+        .await;
+
+    response.assert_status_bad_request();
 }
 
 #[tokio::test]
@@ -119,7 +136,8 @@ async fn create_duplicate_agent_name_fails() {
         .add_cookie(Cookie::new("token", token.clone()))
         .json(&json!({
             "game_id": game_id,
-            "name": "Duplicate Name"
+            "name": "Duplicate Name",
+            "code": "-- code"
         }))
         .await
         .assert_status_ok();
@@ -130,11 +148,108 @@ async fn create_duplicate_agent_name_fails() {
         .add_cookie(Cookie::new("token", token))
         .json(&json!({
             "game_id": game_id,
-            "name": "Duplicate Name"
+            "name": "Duplicate Name",
+            "code": "-- code"
         }))
         .await;
 
     response.assert_status_not_ok();
+}
+
+#[tokio::test]
+async fn create_agent_with_empty_name_fails() {
+    let (server, state) = setup_server().await;
+    let (_user_id, token) = create_user_with_token(&state, "testuser").await;
+    let game_id = get_robotsumo_game_id(&state).await;
+
+    let response = server
+        .post("/agents")
+        .add_cookie(Cookie::new("token", token))
+        .json(&json!({
+            "game_id": game_id,
+            "name": "",
+            "code": "-- code"
+        }))
+        .await;
+
+    response.assert_status_bad_request();
+}
+
+#[tokio::test]
+async fn create_agent_with_whitespace_name_fails() {
+    let (server, state) = setup_server().await;
+    let (_user_id, token) = create_user_with_token(&state, "testuser").await;
+    let game_id = get_robotsumo_game_id(&state).await;
+
+    let response = server
+        .post("/agents")
+        .add_cookie(Cookie::new("token", token))
+        .json(&json!({
+            "game_id": game_id,
+            "name": "   ",
+            "code": "-- code"
+        }))
+        .await;
+
+    response.assert_status_bad_request();
+}
+
+#[tokio::test]
+async fn create_agent_with_long_name_fails() {
+    let (server, state) = setup_server().await;
+    let (_user_id, token) = create_user_with_token(&state, "testuser").await;
+    let game_id = get_robotsumo_game_id(&state).await;
+
+    let long_name = "a".repeat(51);
+    let response = server
+        .post("/agents")
+        .add_cookie(Cookie::new("token", token))
+        .json(&json!({
+            "game_id": game_id,
+            "name": long_name,
+            "code": "-- code"
+        }))
+        .await;
+
+    response.assert_status_bad_request();
+}
+
+#[tokio::test]
+async fn create_agent_with_invalid_characters_fails() {
+    let (server, state) = setup_server().await;
+    let (_user_id, token) = create_user_with_token(&state, "testuser").await;
+    let game_id = get_robotsumo_game_id(&state).await;
+
+    let response = server
+        .post("/agents")
+        .add_cookie(Cookie::new("token", token))
+        .json(&json!({
+            "game_id": game_id,
+            "name": "Agent!@#$",
+            "code": "-- code"
+        }))
+        .await;
+
+    response.assert_status_bad_request();
+}
+
+#[tokio::test]
+async fn create_agent_with_invalid_lua_syntax_fails() {
+    let (server, state) = setup_server().await;
+    let (_user_id, token) = create_user_with_token(&state, "testuser").await;
+    let game_id = get_robotsumo_game_id(&state).await;
+
+    let response = server
+        .post("/agents")
+        .add_cookie(Cookie::new("token", token))
+        .json(&json!({
+            "game_id": game_id,
+            "name": "Broken Agent",
+            "code": "function broken()"  // missing 'end'
+        }))
+        .await;
+
+    response.assert_status_bad_request();
 }
 
 // ============================================================================
@@ -154,7 +269,8 @@ async fn list_agents_returns_user_agents() {
             .add_cookie(Cookie::new("token", token.clone()))
             .json(&json!({
                 "game_id": game_id,
-                "name": name
+                "name": name,
+                "code": "-- code"
             }))
             .await
             .assert_status_ok();
@@ -194,7 +310,8 @@ async fn list_agents_only_returns_own_agents() {
             .add_cookie(Cookie::new("token", token1.clone()))
             .json(&json!({
                 "game_id": game_id,
-                "name": name
+                "name": name,
+                "code": "-- code"
             }))
             .await
             .assert_status_ok();
@@ -206,7 +323,8 @@ async fn list_agents_only_returns_own_agents() {
         .add_cookie(Cookie::new("token", token2.clone()))
         .json(&json!({
             "game_id": game_id,
-            "name": "User2 Agent"
+            "name": "User2 Agent",
+            "code": "-- code"
         }))
         .await
         .assert_status_ok();
@@ -280,7 +398,8 @@ async fn get_other_users_agent_fails() {
         .add_cookie(Cookie::new("token", token1))
         .json(&json!({
             "game_id": game_id,
-            "name": "Private Agent"
+            "name": "Private Agent",
+            "code": "-- code"
         }))
         .await;
 
@@ -312,7 +431,7 @@ async fn update_agent_name_succeeds() {
         .json(&json!({
             "game_id": game_id,
             "name": "Original Name",
-            "code": "original code"
+            "code": "-- original code"
         }))
         .await;
 
@@ -330,7 +449,7 @@ async fn update_agent_name_succeeds() {
     response.assert_status_ok();
     let updated: Agent = response.json();
     assert_eq!(updated.name, "New Name");
-    assert_eq!(updated.code, "original code");
+    assert_eq!(updated.code, "-- original code");
 }
 
 #[tokio::test]
@@ -346,7 +465,7 @@ async fn update_agent_code_succeeds() {
         .json(&json!({
             "game_id": game_id,
             "name": "My Agent",
-            "code": "original code"
+            "code": "-- original code"
         }))
         .await;
 
@@ -357,13 +476,13 @@ async fn update_agent_code_succeeds() {
         .put(&format!("/agents/{}", created.id))
         .add_cookie(Cookie::new("token", token))
         .json(&json!({
-            "code": "new code"
+            "code": "-- new code"
         }))
         .await;
 
     response.assert_status_ok();
     let updated: Agent = response.json();
-    assert_eq!(updated.code, "new code");
+    assert_eq!(updated.code, "-- new code");
 }
 
 #[tokio::test]
@@ -379,7 +498,8 @@ async fn update_other_users_agent_fails() {
         .add_cookie(Cookie::new("token", token1))
         .json(&json!({
             "game_id": game_id,
-            "name": "Private Agent"
+            "name": "Private Agent",
+            "code": "-- code"
         }))
         .await;
 
@@ -390,11 +510,73 @@ async fn update_other_users_agent_fails() {
         .put(&format!("/agents/{}", created.id))
         .add_cookie(Cookie::new("token", token2))
         .json(&json!({
-            "name": "Hacked!"
+            "name": "Hacked"
         }))
         .await;
 
     response.assert_status_not_found();
+}
+
+#[tokio::test]
+async fn update_agent_with_invalid_name_fails() {
+    let (server, state) = setup_server().await;
+    let (_user_id, token) = create_user_with_token(&state, "testuser").await;
+    let game_id = get_robotsumo_game_id(&state).await;
+
+    // Create agent
+    let create_response = server
+        .post("/agents")
+        .add_cookie(Cookie::new("token", token.clone()))
+        .json(&json!({
+            "game_id": game_id,
+            "name": "Valid Name",
+            "code": "-- code"
+        }))
+        .await;
+
+    let created: Agent = create_response.json();
+
+    // Try to update with invalid name
+    let response = server
+        .put(&format!("/agents/{}", created.id))
+        .add_cookie(Cookie::new("token", token))
+        .json(&json!({
+            "name": "Invalid!@#$"
+        }))
+        .await;
+
+    response.assert_status_bad_request();
+}
+
+#[tokio::test]
+async fn update_agent_with_empty_code_fails() {
+    let (server, state) = setup_server().await;
+    let (_user_id, token) = create_user_with_token(&state, "testuser").await;
+    let game_id = get_robotsumo_game_id(&state).await;
+
+    // Create agent
+    let create_response = server
+        .post("/agents")
+        .add_cookie(Cookie::new("token", token.clone()))
+        .json(&json!({
+            "game_id": game_id,
+            "name": "Valid Name",
+            "code": "-- valid code"
+        }))
+        .await;
+
+    let created: Agent = create_response.json();
+
+    // Try to update with empty code
+    let response = server
+        .put(&format!("/agents/{}", created.id))
+        .add_cookie(Cookie::new("token", token))
+        .json(&json!({
+            "code": ""
+        }))
+        .await;
+
+    response.assert_status_bad_request();
 }
 
 // ============================================================================
@@ -413,7 +595,8 @@ async fn delete_agent_succeeds() {
         .add_cookie(Cookie::new("token", token.clone()))
         .json(&json!({
             "game_id": game_id,
-            "name": "To Delete"
+            "name": "To Delete",
+            "code": "-- code"
         }))
         .await;
 
@@ -449,7 +632,8 @@ async fn delete_other_users_agent_fails() {
         .add_cookie(Cookie::new("token", token1.clone()))
         .json(&json!({
             "game_id": game_id,
-            "name": "Private Agent"
+            "name": "Private Agent",
+            "code": "-- code"
         }))
         .await;
 

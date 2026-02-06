@@ -19,6 +19,9 @@ pub enum Error {
     #[error("User error: {0}")]
     User(#[from] crate::models::UserError),
 
+    #[error("Agent error: {0}")]
+    Agent(#[from] crate::models::AgentError),
+
     #[error("Not found")]
     NotFound,
 
@@ -40,6 +43,7 @@ impl IntoResponse for Error {
             Error::Claims(_) => StatusCode::UNAUTHORIZED,
             Error::NotFound => StatusCode::NOT_FOUND,
             Error::Conflict(_) => StatusCode::CONFLICT,
+            Error::User(_) | Error::Agent(_) => StatusCode::BAD_REQUEST,
             _ => StatusCode::INTERNAL_SERVER_ERROR,
         };
 

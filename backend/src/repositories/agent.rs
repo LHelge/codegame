@@ -1,4 +1,4 @@
-use crate::models::Agent;
+use crate::models::{Agent, validate_agent_code, validate_agent_name};
 use crate::prelude::*;
 use sqlx::SqlitePool;
 
@@ -21,6 +21,10 @@ impl<'a> AgentRepository<'a> {
         name: &str,
         code: &str,
     ) -> Result<Agent> {
+        // Validate the agent name and code
+        validate_agent_name(name)?;
+        validate_agent_code(code)?;
+
         let agent = sqlx::query_as!(
             Agent,
             r#"
@@ -116,6 +120,16 @@ impl<'a> AgentRepository<'a> {
         name: Option<&str>,
         code: Option<&str>,
     ) -> Result<Option<Agent>> {
+        // Validate name if provided
+        if let Some(name) = name {
+            validate_agent_name(name)?;
+        }
+
+        // Validate code if provided
+        if let Some(code) = code {
+            validate_agent_code(code)?;
+        }
+
         // First check the agent exists and belongs to user
         let existing = self.find_by_id(id, user_id).await?;
         if existing.is_none() {
@@ -239,7 +253,7 @@ mod tests {
 
         let repo = AgentRepository::new(&pool);
         let created = repo
-            .create(user_id, game_id, "Agent 1", "code")
+            .create(user_id, game_id, "Agent 1", "-- agent 1")
             .await
             .unwrap();
 
@@ -260,10 +274,10 @@ mod tests {
         let game_id = get_test_game_id(&pool).await;
 
         let repo = AgentRepository::new(&pool);
-        repo.create(user_id, game_id, "Agent A", "code a")
+        repo.create(user_id, game_id, "Agent A", "-- code a")
             .await
             .unwrap();
-        repo.create(user_id, game_id, "Agent B", "code b")
+        repo.create(user_id, game_id, "Agent B", "-- code b")
             .await
             .unwrap();
 
@@ -281,7 +295,7 @@ mod tests {
 
         let repo = AgentRepository::new(&pool);
         let created = repo
-            .create(user_id, game_id, "Original", "original code")
+            .create(user_id, game_id, "Original", "-- original code")
             .await
             .unwrap();
 
@@ -292,15 +306,15 @@ mod tests {
             .unwrap()
             .unwrap();
         assert_eq!(updated.name, "Renamed");
-        assert_eq!(updated.code, "original code");
+        assert_eq!(updated.code, "-- original code");
 
         // Update code
         let updated = repo
-            .update(created.id, user_id, None, Some("new code"))
+            .update(created.id, user_id, None, Some("-- new code"))
             .await
             .unwrap()
             .unwrap();
-        assert_eq!(updated.code, "new code");
+        assert_eq!(updated.code, "-- new code");
     }
 
     #[tokio::test]
@@ -311,7 +325,7 @@ mod tests {
 
         let repo = AgentRepository::new(&pool);
         let created = repo
-            .create(user_id, game_id, "To Delete", "code")
+            .create(user_id, game_id, "To Delete", "-- code")
             .await
             .unwrap();
 
@@ -325,7 +339,7 @@ mod tests {
 
         // Delete with wrong user should return false
         let created2 = repo
-            .create(user_id, game_id, "Another", "code")
+            .create(user_id, game_id, "Another", "-- code")
             .await
             .unwrap();
         let not_deleted = repo.delete(created2.id, user_id + 999).await.unwrap();
