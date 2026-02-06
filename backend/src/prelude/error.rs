@@ -25,12 +25,25 @@ pub enum Error {
 
 pub type Result<T> = std::result::Result<T, Error>;
 
+#[derive(serde::Serialize)]
+struct ErrorResponse {
+    status: u16,
+    error: String,
+}
+
 impl IntoResponse for Error {
     fn into_response(self) -> axum::response::Response {
-        match self {
-            Error::Claims(e) => e.into_response(),
-            Error::NotFound => StatusCode::NOT_FOUND.into_response(),
-            _ => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-        }
+        let status = match self {
+            Error::Claims(_) => StatusCode::UNAUTHORIZED,
+            Error::NotFound => StatusCode::NOT_FOUND,
+            _ => StatusCode::INTERNAL_SERVER_ERROR,
+        };
+
+        let error_response = ErrorResponse {
+            status: status.as_u16(),
+            error: self.to_string(),
+        };
+
+        (status, axum::Json(error_response)).into_response()
     }
 }
