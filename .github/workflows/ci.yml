@@ -56,29 +56,27 @@ jobs:
   games-fmt:
     name: Games Format
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: games
     steps:
       - uses: actions/checkout@v4
       - name: Check formatting
-        run: |
-          for game in games/*/; do
-            echo "Checking $game"
-            cargo fmt --manifest-path "${game}Cargo.toml" -- --check
-          done
+        run: cargo fmt -- --check
 
   games-clippy:
     name: Games Clippy
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: games
     steps:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: games/robotsumo -> target
+          workspaces: games -> target
       - name: Run clippy on games
-        run: |
-          for game in games/*/; do
-            echo "Checking $game"
-            cargo clippy --manifest-path "${game}Cargo.toml" --all-targets -- -D warnings
-          done
+        run: cargo clippy --all-targets -- -D warnings
 
   frontend:
     name: Frontend

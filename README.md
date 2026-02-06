@@ -63,10 +63,13 @@ Open http://localhost in your browser.
 
 ```bash
 cd backend
+cp .env.example .env  # First time only
+sqlx database create  # First time only
+sqlx migrate run      # First time or after new migrations
 cargo run
 ```
 
-The API runs at http://localhost:3000
+The backend must be run from inside the `backend/` directory. The API runs at http://localhost:3000
 
 ### Frontend
 
@@ -84,6 +87,7 @@ The dev server runs at http://localhost:5173
 rustup target add wasm32-unknown-unknown
 cargo install wasm-pack
 wasm-pack build games/robotsumo --target web --out-dir ../../frontend/public/wasm/robotsumo
+wasm-pack build games/snake --target web --out-dir ../../frontend/public/wasm/snake
 ```
 
 ## Project Structure
@@ -91,7 +95,8 @@ wasm-pack build games/robotsumo --target web --out-dir ../../frontend/public/was
 /backend       # Rust Axum API
 /frontend      # React app styled with Tailwind
 /games         # Rust/Bevy games (WASM builds)
-  /robotsumo   # Initial game implementation
+  /robotsumo   # Robot sumo game
+  /snake       # Snake game
 /ai            # Lua scripts and templates
 /docs          # Learning materials and guides
 ```

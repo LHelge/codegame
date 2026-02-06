@@ -1,5 +1,5 @@
 [package]
-name = "robotsumo"
+name = "snake"
 version.workspace = true
 edition.workspace = true
 

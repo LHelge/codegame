@@ -6,8 +6,8 @@ pub fn run() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
-                title: "Robot Sumo".into(),
-                canvas: Some("#robotsumo-canvas".into()),
+                title: "Snake".into(),
+                canvas: Some("#snake-canvas".into()),
                 fit_canvas_to_parent: true,
                 prevent_default_event_handling: true,
                 ..default()
@@ -30,7 +30,7 @@ fn setup(mut commands: Commands) {
             ..default()
         })
         .with_child((
-            Text::new("Robot Sumo"),
+            Text::new("Snake"),
             TextFont {
                 font_size: 64.0,
                 ..default()
