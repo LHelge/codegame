@@ -21,6 +21,9 @@ pub enum Error {
 
     #[error("Not found")]
     NotFound,
+
+    #[error("Conflict: {0}")]
+    Conflict(String),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -36,6 +39,7 @@ impl IntoResponse for Error {
         let status = match self {
             Error::Claims(_) => StatusCode::UNAUTHORIZED,
             Error::NotFound => StatusCode::NOT_FOUND,
+            Error::Conflict(_) => StatusCode::CONFLICT,
             _ => StatusCode::INTERNAL_SERVER_ERROR,
         };
 

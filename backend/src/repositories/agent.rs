@@ -41,7 +41,18 @@ impl<'a> AgentRepository<'a> {
             code,
         )
         .fetch_one(self.db)
-        .await?;
+        .await
+        .map_err(|e| {
+            if let sqlx::Error::Database(ref db_err) = e
+                && db_err.is_unique_violation()
+            {
+                return Error::Conflict(format!(
+                    "An agent with name '{}' already exists for this game",
+                    name
+                ));
+            }
+            Error::Database(e)
+        })?;
 
         Ok(agent)
     }
@@ -137,7 +148,18 @@ impl<'a> AgentRepository<'a> {
             user_id,
         )
         .fetch_one(self.db)
-        .await?;
+        .await
+        .map_err(|e| {
+            if let sqlx::Error::Database(ref db_err) = e
+                && db_err.is_unique_violation()
+            {
+                return Error::Conflict(format!(
+                    "An agent with name '{}' already exists for this game",
+                    new_name
+                ));
+            }
+            Error::Database(e)
+        })?;
 
         Ok(Some(agent))
     }
