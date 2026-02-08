@@ -43,6 +43,9 @@ COPY .sqlx .sqlx
 ENV SQLX_OFFLINE=true
 RUN cargo build --release
 
+# Create data directory for SQLite database
+RUN mkdir -p /tmp/data
+
 # ==============================================================================
 # Stage 4: Runtime - Minimal distroless image
 # ==============================================================================
@@ -55,6 +58,9 @@ COPY --from=builder /app/target/release/backend /app/backend
 
 # Copy migrations for runtime migration support
 COPY --from=builder /app/migrations /app/migrations
+
+# Create data directory for SQLite database (distroless has no shell/mkdir)
+COPY --from=builder --chown=nonroot:nonroot /tmp/data /app/data
 
 # Run as non-root user (distroless nonroot variant)
 USER nonroot:nonroot
