@@ -8,5 +8,6 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 bevy.workspace = true
+mlua.workspace = true
 wasm-bindgen.workspace = true
 getrandom.workspace = true
