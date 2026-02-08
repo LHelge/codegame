@@ -96,17 +96,13 @@ The script builds all games and copies them to `frontend/public/wasm/`.
 
 ### Running Games Natively
 
-You can run any game directly on your desktop for quick testing. The `native`
-feature enables windowing support (X11):
+You can run any game directly on your desktop for quick testing:
 
 ```bash
 cd games
-cargo run -p snake --features native
-cargo run -p robotsumo --features native
+cargo run -p snake
+cargo run -p robotsumo
 ```
-
-The `native` feature is not included by default so that CI and WASM builds
-don't require system windowing libraries.
 
 ## Project Structure
 ```
