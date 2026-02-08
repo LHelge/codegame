@@ -1,7 +1,7 @@
+use bevy::asset::RenderAssetUsages;
+use bevy::camera::ScalingMode;
 use bevy::image::{CompressedImageFormats, ImageSampler, ImageType};
 use bevy::prelude::*;
-use bevy::render::camera::ScalingMode;
-use bevy::render::render_asset::RenderAssetUsages;
 use mlua::prelude::*;
 use std::collections::VecDeque;
 use wasm_bindgen::prelude::*;
@@ -318,13 +318,13 @@ fn setup(
     let total = GRID_SIZE as f32 * CELL_SIZE;
     commands.spawn((
         Camera2d,
-        OrthographicProjection {
+        Projection::Orthographic(OrthographicProjection {
             scaling_mode: ScalingMode::AutoMin {
                 min_width: total,
                 min_height: total,
             },
             ..OrthographicProjection::default_2d()
-        },
+        }),
     ));
 
     // Decode embedded sprite sheet
@@ -550,7 +550,7 @@ fn render_game(
     } else if !game.game_over
         && let Some(entity) = entities.game_over_ui.take()
     {
-        commands.entity(entity).despawn_recursive();
+        commands.entity(entity).despawn();
     }
 }
 

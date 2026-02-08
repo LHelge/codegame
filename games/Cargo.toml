@@ -7,19 +7,8 @@ version = "0.0.2"
 edition = "2024"
 
 [workspace.dependencies]
-bevy = { version = "0.15", default-features = false, features = [
-    "bevy_asset",
-    "bevy_sprite",
-    "bevy_winit",
-    "bevy_core_pipeline",
-    "bevy_pbr",
-    "bevy_render",
-    "bevy_state",
-    "bevy_text",
-    "bevy_ui",
-    "default_font",
-    "multi_threaded",
-    "png",
+bevy = { version = "0.18", default-features = false, features = [
+    "2d",
     "webgl2",
     "x11",
 ] }
