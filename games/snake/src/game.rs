@@ -158,10 +158,12 @@ mod tests {
 
     #[test]
     fn reset_clears_game_over() {
-        let mut game = SnakeGame::default();
-        game.game_over = true;
-        game.score = 42;
-        game.game_over_timer = 2.0;
+        let mut game = SnakeGame {
+            game_over: true,
+            score: 42,
+            game_over_timer: 2.0,
+            ..SnakeGame::default()
+        };
         reset_game_state(&mut game);
         assert!(!game.game_over);
         assert_eq!(game.score, 0);

@@ -6,6 +6,9 @@ edition.workspace = true
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[features]
+native = ["bevy/x11"]
+
 [dependencies]
 bevy.workspace = true
 mlua.workspace = true

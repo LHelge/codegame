@@ -78,6 +78,20 @@ jobs:
       - name: Run clippy on games
         run: cargo clippy --all-targets -- -D warnings
 
+  games-test:
+    name: Games Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: games
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: games -> target
+      - name: Run tests
+        run: cargo test
+
   frontend:
     name: Frontend
     runs-on: ubuntu-latest
