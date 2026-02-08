@@ -70,3 +70,117 @@ impl LuaEngine {
         Direction::from_str(&result)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::VecDeque;
+
+    fn make_game() -> SnakeGame {
+        SnakeGame {
+            snake: VecDeque::from([(5, 5), (4, 5), (3, 5)]),
+            direction: Direction::East,
+            food: (10, 10),
+            score: 0,
+            game_over: false,
+            game_over_timer: 0.0,
+        }
+    }
+
+    #[test]
+    fn new_engine_has_no_script() {
+        let engine = LuaEngine::new();
+        assert!(!engine.script_loaded);
+    }
+
+    #[test]
+    fn load_valid_script() {
+        let mut engine = LuaEngine::new();
+        let ok = engine.load_script("function think(state) return 'north' end");
+        assert!(ok);
+        assert!(engine.script_loaded);
+    }
+
+    #[test]
+    fn load_script_without_think_fails() {
+        let mut engine = LuaEngine::new();
+        let ok = engine.load_script("function helper() return 1 end");
+        assert!(!ok);
+        assert!(!engine.script_loaded);
+    }
+
+    #[test]
+    fn load_syntax_error_fails() {
+        let mut engine = LuaEngine::new();
+        let ok = engine.load_script("this is not valid lua %%!!");
+        assert!(!ok);
+    }
+
+    #[test]
+    fn call_think_returns_direction() {
+        let mut engine = LuaEngine::new();
+        engine.load_script("function think(state) return 'north' end");
+        let game = make_game();
+        assert_eq!(engine.call_think(&game), Some(Direction::North));
+    }
+
+    #[test]
+    fn call_think_returns_none_when_no_script() {
+        let engine = LuaEngine::new();
+        let game = make_game();
+        assert_eq!(engine.call_think(&game), None);
+    }
+
+    #[test]
+    fn call_think_returns_none_for_invalid_direction() {
+        let mut engine = LuaEngine::new();
+        engine.load_script("function think(state) return 'sideways' end");
+        let game = make_game();
+        assert_eq!(engine.call_think(&game), None);
+    }
+
+    #[test]
+    fn think_receives_game_state() {
+        let mut engine = LuaEngine::new();
+        // Script that reads state and returns direction based on food position.
+        let script = r#"
+            function think(state)
+                if state.food.x > state.snake[1].x then
+                    return "east"
+                else
+                    return "west"
+                end
+            end
+        "#;
+        engine.load_script(script);
+        let game = make_game(); // food at (10,10), head at (5,5)
+        assert_eq!(engine.call_think(&game), Some(Direction::East));
+    }
+
+    #[test]
+    fn think_receives_grid_size() {
+        let mut engine = LuaEngine::new();
+        let script = r#"
+            function think(state)
+                if state.grid_size == 32 then
+                    return "north"
+                end
+                return "south"
+            end
+        "#;
+        engine.load_script(script);
+        let game = make_game();
+        assert_eq!(engine.call_think(&game), Some(Direction::North));
+    }
+
+    #[test]
+    fn replacing_script_works() {
+        let mut engine = LuaEngine::new();
+        engine.load_script("function think(state) return 'north' end");
+        let game = make_game();
+        assert_eq!(engine.call_think(&game), Some(Direction::North));
+
+        engine.load_script("function think(state) return 'south' end");
+        assert_eq!(engine.call_think(&game), Some(Direction::South));
+    }
+}

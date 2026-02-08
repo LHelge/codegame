@@ -280,3 +280,87 @@ fn sprite_index_for_segment(game: &SnakeGame, index: usize) -> usize {
         _ => SPRITE_BODY_H, // fallback
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::VecDeque;
+
+    /// Build a minimal game with the given snake segments.
+    fn game_with_snake(segments: &[(i32, i32)]) -> SnakeGame {
+        SnakeGame {
+            snake: VecDeque::from(segments.to_vec()),
+            direction: Direction::East,
+            food: (0, 0),
+            score: 0,
+            game_over: false,
+            game_over_timer: 0.0,
+        }
+    }
+
+    #[test]
+    fn head_facing_east() {
+        // Head at (5,5), body at (4,5) → head looks east (body is to the west)
+        let game = game_with_snake(&[(5, 5), (4, 5), (3, 5)]);
+        // The head sprite is chosen by where the *body* is relative to the head.
+        // Body is west of head → head sprite faces east (away from body).
+        // Actually the code maps to_body direction directly to sprite:
+        // to_body=West → SPRITE_HEAD_W?  Let's check the mapping.
+        // In the code: to_body = direction_between(cur, body) = direction from (5,5) to (4,5) = West
+        // match to_body West => SPRITE_HEAD_W
+        // Wait, that means the head sprite index indicates WHERE THE BODY IS,
+        // which is the direction the head is facing INTO (i.e., the tail side).
+        // The naming convention on the sprite sheet determines this.
+        assert_eq!(sprite_index_for_segment(&game, 0), SPRITE_HEAD_W);
+    }
+
+    #[test]
+    fn head_facing_north() {
+        // Head at (5,6), body at (5,5) → body is south of head
+        let game = game_with_snake(&[(5, 6), (5, 5), (5, 4)]);
+        assert_eq!(sprite_index_for_segment(&game, 0), SPRITE_HEAD_S);
+    }
+
+    #[test]
+    fn tail_sprite() {
+        // Snake: (5,5) (4,5) (3,5) — tail at (3,5), body at (4,5)
+        let game = game_with_snake(&[(5, 5), (4, 5), (3, 5)]);
+        let tail_idx = game.snake.len() - 1;
+        // direction_between(tail=(3,5), body=(4,5)) = East
+        assert_eq!(sprite_index_for_segment(&game, tail_idx), SPRITE_TAIL_E);
+    }
+
+    #[test]
+    fn horizontal_body_segment() {
+        // Straight horizontal snake: (6,5) (5,5) (4,5) (3,5)
+        let game = game_with_snake(&[(6, 5), (5, 5), (4, 5), (3, 5)]);
+        // Middle segment at index 1: (5,5), prev=(6,5) next=(4,5)
+        // to_prev = East, to_next = West → SPRITE_BODY_H
+        assert_eq!(sprite_index_for_segment(&game, 1), SPRITE_BODY_H);
+    }
+
+    #[test]
+    fn vertical_body_segment() {
+        // Straight vertical snake: (5,7) (5,6) (5,5) (5,4)
+        let game = game_with_snake(&[(5, 7), (5, 6), (5, 5), (5, 4)]);
+        // Middle segment at index 1: (5,6), prev=(5,7) next=(5,5)
+        // to_prev = North, to_next = South → SPRITE_BODY_V
+        assert_eq!(sprite_index_for_segment(&game, 1), SPRITE_BODY_V);
+    }
+
+    #[test]
+    fn turn_segment() {
+        // Snake turns: head going east then turns north
+        // (5,6) (5,5) (4,5) (3,5)
+        let game = game_with_snake(&[(5, 6), (5, 5), (4, 5), (3, 5)]);
+        // Turn segment at index 1: (5,5), prev=(5,6) next=(4,5)
+        // to_prev = North, to_next = West → SPRITE_TURN_NW
+        assert_eq!(sprite_index_for_segment(&game, 1), SPRITE_TURN_NW);
+    }
+
+    #[test]
+    fn single_segment_snake() {
+        let game = game_with_snake(&[(5, 5)]);
+        assert_eq!(sprite_index_for_segment(&game, 0), SPRITE_HEAD_E);
+    }
+}
