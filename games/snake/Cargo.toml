@@ -1,6 +1,6 @@
 [package]
 name = "snake"
-version.workspace = true
+version = "0.0.3"
 edition.workspace = true
 
 [lib]
@@ -8,5 +8,6 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 bevy.workspace = true
+mlua.workspace = true
 wasm-bindgen.workspace = true
 getrandom.workspace = true

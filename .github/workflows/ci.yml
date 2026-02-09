@@ -72,11 +72,33 @@ jobs:
         working-directory: games
     steps:
       - uses: actions/checkout@v4
+      - name: Install Bevy system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libudev-dev libasound2-dev libwayland-dev libxkbcommon-dev
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: games -> target
       - name: Run clippy on games
         run: cargo clippy --all-targets -- -D warnings
+
+  games-test:
+    name: Games Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: games
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Bevy system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libudev-dev libasound2-dev libwayland-dev libxkbcommon-dev
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: games -> target
+      - name: Run tests
+        run: cargo test
 
   frontend:
     name: Frontend

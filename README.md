@@ -94,6 +94,16 @@ cargo install wasm-pack
 
 The script builds all games and copies them to `frontend/public/wasm/`.
 
+### Running Games Natively
+
+You can run any game directly on your desktop for quick testing:
+
+```bash
+cd games
+cargo run -p snake
+cargo run -p robotsumo
+```
+
 ## Project Structure
 ```
 /backend       # Rust Axum API
