@@ -53,8 +53,20 @@ pub fn game_tick(
         return;
     }
 
-    // Self collision
-    if game.snake.contains(&new_head) {
+    // Determine if the snake will grow (eating food)
+    let will_grow = new_head == game.food;
+
+    // Self collision: when not growing, exclude the tail since it will move out of the way
+    let self_collision = if will_grow {
+        game.snake.contains(&new_head)
+    } else {
+        game.snake
+            .iter()
+            .take(game.snake.len() - 1)
+            .any(|&seg| seg == new_head)
+    };
+
+    if self_collision {
         game.game_over = true;
         game.game_over_timer = GAME_OVER_DELAY;
         return;
@@ -62,9 +74,16 @@ pub fn game_tick(
 
     game.snake.push_front(new_head);
 
-    if new_head == game.food {
+    if will_grow {
         game.score += 1;
-        game.food = random_food_position(&game.snake);
+        if let Some(new_food) = random_food_position(&game.snake) {
+            game.food = new_food;
+        } else {
+            // Snake filled the entire grid — player wins!
+            game.game_won = true;
+            game.game_over = true;
+            game.game_over_timer = GAME_OVER_DELAY;
+        }
     } else {
         game.snake.pop_back();
     }

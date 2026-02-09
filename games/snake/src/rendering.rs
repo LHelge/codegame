@@ -294,6 +294,7 @@ mod tests {
             food: (0, 0),
             score: 0,
             game_over: false,
+            game_won: false,
             game_over_timer: 0.0,
         }
     }

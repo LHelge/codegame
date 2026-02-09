@@ -25,6 +25,7 @@ pub struct SnakeGame {
     pub food: (i32, i32),
     pub score: u32,
     pub game_over: bool,
+    pub game_won: bool,
     pub game_over_timer: f32,
 }
 
@@ -36,13 +37,15 @@ impl Default for SnakeGame {
             // Head at (mid, mid), body extends west
             snake.push_back((mid - i, mid));
         }
-        let food = random_food_position(&snake);
+        // Safe to unwrap: initial snake is much smaller than the grid
+        let food = random_food_position(&snake).unwrap();
         Self {
             snake,
             direction: Direction::East,
             food,
             score: 0,
             game_over: false,
+            game_won: false,
             game_over_timer: 0.0,
         }
     }
@@ -66,14 +69,20 @@ pub fn grid_to_world(gx: i32, gy: i32) -> Vec3 {
     )
 }
 
-pub fn random_food_position(snake: &VecDeque<(i32, i32)>) -> (i32, i32) {
+/// Returns a random grid position not occupied by the snake.
+/// Returns `None` if the snake fills the entire grid (player wins).
+pub fn random_food_position(snake: &VecDeque<(i32, i32)>) -> Option<(i32, i32)> {
+    let total_cells = (GRID_SIZE * GRID_SIZE) as usize;
+    if snake.len() >= total_cells {
+        return None;
+    }
     loop {
         let mut buf = [0u8; 8];
         getrandom::fill(&mut buf).unwrap();
         let x = (u32::from_le_bytes([buf[0], buf[1], buf[2], buf[3]]) % GRID_SIZE as u32) as i32;
         let y = (u32::from_le_bytes([buf[4], buf[5], buf[6], buf[7]]) % GRID_SIZE as u32) as i32;
         if !snake.contains(&(x, y)) {
-            return (x, y);
+            return Some((x, y));
         }
     }
 }
@@ -85,6 +94,7 @@ pub fn reset_game_state(game: &mut SnakeGame) {
     game.food = fresh.food;
     game.score = 0;
     game.game_over = false;
+    game.game_won = false;
     game.game_over_timer = 0.0;
 }
 
@@ -115,6 +125,7 @@ mod tests {
     fn default_game_is_not_over() {
         let game = SnakeGame::default();
         assert!(!game.game_over);
+        assert!(!game.game_won);
         assert_eq!(game.score, 0);
     }
 
@@ -128,11 +139,22 @@ mod tests {
     fn random_food_avoids_snake() {
         let game = SnakeGame::default();
         for _ in 0..50 {
-            let pos = random_food_position(&game.snake);
+            let pos = random_food_position(&game.snake).unwrap();
             assert!(!game.snake.contains(&pos));
             assert!(pos.0 >= 0 && pos.0 < GRID_SIZE);
             assert!(pos.1 >= 0 && pos.1 < GRID_SIZE);
         }
+    }
+
+    #[test]
+    fn random_food_returns_none_when_grid_full() {
+        let mut snake = VecDeque::new();
+        for y in 0..GRID_SIZE {
+            for x in 0..GRID_SIZE {
+                snake.push_back((x, y));
+            }
+        }
+        assert!(random_food_position(&snake).is_none());
     }
 
     #[test]
@@ -160,12 +182,14 @@ mod tests {
     fn reset_clears_game_over() {
         let mut game = SnakeGame {
             game_over: true,
+            game_won: true,
             score: 42,
             game_over_timer: 2.0,
             ..SnakeGame::default()
         };
         reset_game_state(&mut game);
         assert!(!game.game_over);
+        assert!(!game.game_won);
         assert_eq!(game.score, 0);
         assert_eq!(game.game_over_timer, 0.0);
         assert_eq!(game.snake.len(), INITIAL_LENGTH);

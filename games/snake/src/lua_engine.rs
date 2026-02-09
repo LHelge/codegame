@@ -1,8 +1,32 @@
 use bevy::prelude::*;
 use mlua::prelude::*;
+use std::cell::RefCell;
 
 use crate::direction::Direction;
 use crate::game::{GRID_SIZE, SnakeGame};
+
+// ---------------------------------------------------------------------------
+// Thread-local for exposing script errors to JS (WASM)
+// ---------------------------------------------------------------------------
+
+std::thread_local! {
+    /// The most recent Lua script error, if any. Cleared when a new script loads successfully.
+    pub static LAST_SCRIPT_ERROR: RefCell<Option<String>> = const { RefCell::new(None) };
+}
+
+/// Set the last script error (called internally).
+fn set_last_error(msg: String) {
+    LAST_SCRIPT_ERROR.with(|cell| {
+        *cell.borrow_mut() = Some(msg);
+    });
+}
+
+/// Clear the last script error.
+fn clear_last_error() {
+    LAST_SCRIPT_ERROR.with(|cell| {
+        *cell.borrow_mut() = None;
+    });
+}
 
 /// Lua scripting engine (non-Send because `mlua::Lua` is `!Send`).
 pub struct LuaEngine {
@@ -20,18 +44,23 @@ impl LuaEngine {
 
     pub fn load_script(&mut self, code: &str) -> bool {
         if let Err(e) = self.lua.load(code).exec() {
+            let msg = format!("Syntax error: {e}");
             warn!("Lua load error: {e}");
+            set_last_error(msg);
             self.script_loaded = false;
             return false;
         }
         // Verify a `think` function exists.
         match self.lua.globals().get::<mlua::Function>("think") {
             Ok(_) => {
+                clear_last_error();
                 self.script_loaded = true;
                 true
             }
             Err(e) => {
+                let msg = "Script must define a `think(state)` function".to_string();
                 warn!("Lua script has no `think` function: {e}");
+                set_last_error(msg);
                 self.script_loaded = false;
                 false
             }
@@ -66,8 +95,28 @@ impl LuaEngine {
         state.set("grid_size", GRID_SIZE).ok()?;
         state.set("score", game.score).ok()?;
 
-        let result: String = think.call(state).ok()?;
-        Direction::from_str(&result)
+        let result: Result<String, _> = think.call(state);
+        match result {
+            Ok(dir_str) => {
+                if let Some(dir) = Direction::from_str(&dir_str) {
+                    Some(dir)
+                } else {
+                    let msg = format!(
+                        "think() returned '{}', expected 'north', 'south', 'east', or 'west'",
+                        dir_str
+                    );
+                    warn!("{}", msg);
+                    set_last_error(msg);
+                    None
+                }
+            }
+            Err(e) => {
+                let msg = format!("Runtime error in think(): {e}");
+                warn!("{}", msg);
+                set_last_error(msg);
+                None
+            }
+        }
     }
 }
 
@@ -83,6 +132,7 @@ mod tests {
             food: (10, 10),
             score: 0,
             game_over: false,
+            game_won: false,
             game_over_timer: 0.0,
         }
     }
@@ -182,5 +232,62 @@ mod tests {
 
         engine.load_script("function think(state) return 'south' end");
         assert_eq!(engine.call_think(&game), Some(Direction::South));
+    }
+
+    #[test]
+    fn syntax_error_sets_last_error() {
+        clear_last_error();
+        let mut engine = LuaEngine::new();
+        engine.load_script("this is not valid lua %%!!");
+        let err = LAST_SCRIPT_ERROR.with(|cell| cell.borrow().clone());
+        assert!(err.is_some());
+        assert!(err.unwrap().contains("Syntax error"));
+    }
+
+    #[test]
+    fn missing_think_sets_last_error() {
+        clear_last_error();
+        let mut engine = LuaEngine::new();
+        engine.load_script("function helper() return 1 end");
+        let err = LAST_SCRIPT_ERROR.with(|cell| cell.borrow().clone());
+        assert!(err.is_some());
+        assert!(err.unwrap().contains("think(state)"));
+    }
+
+    #[test]
+    fn valid_script_clears_last_error() {
+        // First cause an error
+        let mut engine = LuaEngine::new();
+        engine.load_script("invalid syntax !!");
+        assert!(LAST_SCRIPT_ERROR.with(|cell| cell.borrow().is_some()));
+
+        // Now load a valid script
+        engine.load_script("function think(state) return 'north' end");
+        assert!(LAST_SCRIPT_ERROR.with(|cell| cell.borrow().is_none()));
+    }
+
+    #[test]
+    fn invalid_direction_sets_last_error() {
+        clear_last_error();
+        let mut engine = LuaEngine::new();
+        engine.load_script("function think(state) return 'sideways' end");
+        let game = make_game();
+        engine.call_think(&game);
+        let err = LAST_SCRIPT_ERROR.with(|cell| cell.borrow().clone());
+        assert!(err.is_some());
+        assert!(err.unwrap().contains("sideways"));
+    }
+
+    #[test]
+    fn runtime_error_sets_last_error() {
+        clear_last_error();
+        let mut engine = LuaEngine::new();
+        // Script that causes a runtime error by accessing nil
+        engine.load_script("function think(state) return state.nonexistent.value end");
+        let game = make_game();
+        engine.call_think(&game);
+        let err = LAST_SCRIPT_ERROR.with(|cell| cell.borrow().clone());
+        assert!(err.is_some());
+        assert!(err.unwrap().contains("Runtime error"));
     }
 }
